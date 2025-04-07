@@ -95,6 +95,40 @@
             </div>
           </AppCard>
           
+          <!-- Add WASM File Upload Card -->
+          <AppCard title="WASM File Management">
+            <div class="space-y-6">
+              <div>
+                <h3 class="text-sm font-medium text-gray-700 mb-2">Upload WASM File</h3>
+                <FileUpload 
+                  accept=".wasm"
+                  acceptDescription="WebAssembly (.wasm) files only"
+                  @file-selected="onFileSelected"
+                />
+                
+                <div v-if="uploadFile" class="mt-4 flex justify-end">
+                  <AppButton 
+                    @click="uploadWasmFile" 
+                    :loading="uploading"
+                    size="sm"
+                  >
+                    Upload File
+                  </AppButton>
+                </div>
+              </div>
+              
+              <div class="border-t border-gray-200 pt-5">
+                <h3 class="text-sm font-medium text-gray-700 mb-3">Uploaded WASM Files</h3>
+                <FileList 
+                  :files="wasmFiles" 
+                  :loading="loadingFiles"
+                  @download="downloadWasmFile"
+                  @delete="deleteWasmFile"
+                />
+              </div>
+            </div>
+          </AppCard>
+          
           <AppCard title="Tools">
             <div v-if="mcpServer.tools && mcpServer.tools.length > 0">
               <div v-for="(tool, index) in mcpServer.tools" :key="tool.name" :class="{ 'mt-6 pt-6 border-t border-gray-100': index > 0 }">
@@ -271,6 +305,8 @@
 
 <script setup lang="ts">
 import { useRouter, useRoute } from 'vue-router';
+import FileUpload from '~/components/FileUpload.vue';
+import FileList from '~/components/FileList.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -289,6 +325,20 @@ const activeTool = ref<any>(null);
 const testInputs = ref<{ name: string; value: string; placeholder: string }[]>([]);
 const testingTool = ref(false);
 const testResult = ref('');
+
+// WASM File Upload
+const uploadFile = ref<File | null>(null);
+const uploading = ref(false);
+const wasmFiles = ref<any[]>([]);
+const loadingFiles = ref(false);
+
+interface WasmFile {
+  id: string;
+  name: string;
+  size: number;
+  uploadedAt: string;
+  path: string;
+}
 
 // Status color mapping
 const statusClass = (status: string) => {
@@ -417,6 +467,63 @@ const runTest = async () => {
   }
 };
 
+// WASM File Upload
+function onFileSelected(file: File) {
+  uploadFile.value = file;
+}
+
+async function uploadWasmFile() {
+  if (!uploadFile.value) return;
+  
+  try {
+    uploading.value = true;
+    const { data } = await $api.mcpServers.uploadWasm(mcpServer.value.id, uploadFile.value);
+    await fetchWasmFiles();
+    uploadFile.value = null;
+    
+    // Show success message
+    alert('File uploaded successfully');
+    
+    // Refresh server details
+    await fetchMCPServer();
+  } catch (error: any) {
+    console.error('Error uploading WASM file:', error);
+    alert('Error uploading file: ' + (error.response?.data?.error || error.message));
+  } finally {
+    uploading.value = false;
+  }
+}
+
+async function fetchWasmFiles() {
+  try {
+    loadingFiles.value = true;
+    const { data } = await $api.mcpServers.getWasmFiles(mcpServer.value.id);
+    wasmFiles.value = data;
+  } catch (error) {
+    console.error('Error fetching WASM files:', error);
+  } finally {
+    loadingFiles.value = false;
+  }
+}
+
+function downloadWasmFile(file: WasmFile) {
+  // Create a download link
+  const downloadUrl = $api.wasmFiles.download(file.id);
+  window.open(downloadUrl, '_blank');
+}
+
+async function deleteWasmFile(file: WasmFile) {
+  if (!confirm(`Are you sure you want to delete ${file.name}?`)) return;
+  
+  try {
+    await $api.wasmFiles.delete(file.id);
+    await fetchWasmFiles();
+  } catch (error: any) {
+    console.error('Error deleting WASM file:', error);
+    alert('Error deleting file: ' + (error.response?.data?.error || error.message));
+  }
+}
+
 // Fetch MCP server data and versions
 onMounted(async () => {
   try {
@@ -450,4 +557,24 @@ onMounted(async () => {
     loading.value = false;
   }
 });
+
+// Fetch WASM files when the server is loaded
+watch(mcpServer, async (newServer) => {
+  if (newServer && newServer.id) {
+    await fetchWasmFiles();
+  }
+}, { immediate: true });
+
+// Add fetchMCPServer function if it doesn't exist
+async function fetchMCPServer() {
+  try {
+    loading.value = true;
+    const response = await $api.mcpServers.getById(route.params.id as string);
+    mcpServer.value = response.data;
+  } catch (error) {
+    console.error('Error fetching MCP server:', error);
+  } finally {
+    loading.value = false;
+  }
+}
 </script> 

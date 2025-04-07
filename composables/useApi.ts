@@ -38,11 +38,36 @@ export const useApi = () => {
     getVersion: (id: string, version: number) => api.get(`/api/mcp-servers/${id}/versions/${version}`),
     compile: (id: string) => api.post(`/api/mcp-servers/${id}/compile`),
     activate: (id: string) => api.post(`/api/mcp-servers/${id}/activate`),
-    invokeTool: (id: string, tool: string, data: any) => api.post(`/api/mcp-servers/${id}/tools/${tool}`, data)
+    invokeTool: (id: string, tool: string, data: any) => api.post(`/api/mcp-servers/${id}/tools/${tool}`, data),
+    // Add file upload function for WASM
+    uploadWasm: (id: string, file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      return axios.post(`${baseURL}/api/mcp-servers/${id}/upload-wasm`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+    },
+    // Add function to list uploaded WASM files
+    getWasmFiles: (id: string) => api.get(`/api/mcp-servers/${id}/wasm-files`)
+  };
+
+  // WASM File Management API
+  const wasmFiles = {
+    getAll: () => api.get('/api/wasm-files'),
+    getById: (id: string) => api.get(`/api/wasm-files/${id}`),
+    delete: (id: string) => api.delete(`/api/wasm-files/${id}`),
+    download: (id: string) => {
+      // Return URL for direct download
+      return `${baseURL}/api/wasm-files/${id}/download`;
+    }
   };
   
   return {
     httpInterfaces,
-    mcpServers
+    mcpServers,
+    wasmFiles
   };
 }; 
