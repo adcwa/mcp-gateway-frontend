@@ -48,7 +48,17 @@ export const useApi = () => {
     getVersion: (id: string, version: number) => api.get(`/api/mcp-servers/${id}/versions/${version}`),
     compile: (id: string) => api.post(`/api/mcp-servers/${id}/compile`),
     activate: (id: string) => api.post(`/api/mcp-servers/${id}/activate`),
-    invokeTool: (id: string, tool: string, data: any) => api.post(`/api/mcp-servers/${id}/tools/${tool}`, data),
+    invokeTool: (id: string, tool: string, data: any) => api.post(
+      `/api/mcp-servers/${id}/tools/${tool}`, 
+      data,
+      { 
+        timeout: 30000,  // Longer timeout for tool execution
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      }
+    ),
     // Add file upload function for WASM
     uploadWasm: (id: string, file: File) => {
       const formData = new FormData();

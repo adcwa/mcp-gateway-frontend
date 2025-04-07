@@ -401,7 +401,7 @@
               <div class="p-4 border-b border-gray-200">
                 <div class="flex items-center justify-between">
                   <h2 class="text-xl font-semibold text-gray-800">Test Tool: {{ activeTool?.name }}</h2>
-                  <button @click="showTestModal = false" class="text-gray-500 hover:text-gray-700">
+                  <button @click="showTestModal = false" class="text-gray-500 hover:text-gray-700" :disabled="testingTool">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -419,6 +419,7 @@
                         type="text" 
                         class="form-input"
                         :placeholder="input.placeholder" 
+                        :disabled="testingTool"
                       />
                     </div>
                   </div>
@@ -431,15 +432,30 @@
                       type="submit" 
                       :loading="testingTool" 
                       full-width
+                      :disabled="testingTool"
                     >
-                      Run Test
+                      {{ testingTool ? 'Running Test...' : 'Run Test' }}
                     </AppButton>
                   </div>
                 </form>
                 
                 <div v-if="testResult" class="mt-6">
-                  <div class="text-sm font-medium text-gray-700 mb-2">Result</div>
-                  <div class="bg-gray-50 rounded-lg p-3">
+                  <div class="text-sm font-medium text-gray-700 mb-2 flex justify-between">
+                    <span>Result</span>
+                    <button 
+                      @click="copyTestResult" 
+                      class="text-primary-500 hover:text-primary-600 text-xs flex items-center"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-8m-10 0h2m2 0h2m-6 5v-3m0 0h2m2 0h2" />
+                      </svg>
+                      Copy
+                    </button>
+                  </div>
+                  <div 
+                    class="bg-gray-50 rounded-lg p-3 overflow-auto max-h-80"
+                    :class="{ 'bg-red-50': testResult.startsWith('Error:') }"
+                  >
                     <pre class="text-xs font-mono text-gray-700 whitespace-pre-wrap break-all">{{ testResult }}</pre>
                   </div>
                 </div>
@@ -593,6 +609,7 @@ const runTest = async () => {
   
   try {
     testingTool.value = true;
+    testResult.value = '';
     
     // Create data object from inputs
     const data: Record<string, string> = {};
@@ -607,10 +624,32 @@ const runTest = async () => {
       data
     );
     
-    testResult.value = response.data;
-  } catch (error) {
+    // Handle different response types
+    if (typeof response.data === 'object') {
+      testResult.value = JSON.stringify(response.data, null, 2);
+    } else {
+      testResult.value = response.data;
+    }
+  } catch (error: any) {
     console.error('Failed to test tool:', error);
-    testResult.value = 'Error: Failed to test tool';
+    
+    // Provide more detailed error information
+    if (error.response) {
+      // The request was made and the server responded with a status code outside of 2xx
+      if (error.response.data && error.response.data.error) {
+        testResult.value = `Error: ${error.response.data.error}`;
+      } else if (error.response.data) {
+        testResult.value = `Error: ${JSON.stringify(error.response.data, null, 2)}`;
+      } else {
+        testResult.value = `Error: Server returned status ${error.response.status}`;
+      }
+    } else if (error.request) {
+      // The request was made but no response was received
+      testResult.value = 'Error: No response received from server. Check network connection.';
+    } else {
+      // Something happened in setting up the request
+      testResult.value = `Error: ${error.message || 'Failed to test tool'}`;
+    }
   } finally {
     testingTool.value = false;
   }
@@ -776,5 +815,10 @@ function copyEndpoint() {
 function copyCurlExample() {
   navigator.clipboard.writeText(curlExample.value);
   alert('cURL example copied to clipboard');
+}
+
+function copyTestResult() {
+  navigator.clipboard.writeText(testResult.value);
+  alert('Test result copied to clipboard');
 }
 </script> 
