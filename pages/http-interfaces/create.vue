@@ -357,10 +357,20 @@
         
         <AppCard title="Import Options">
           <div class="space-y-4">
+            <div>
+              <h3 class="text-sm font-medium text-gray-700 mb-2">Import from Existing Sources</h3>
+              <p class="text-sm text-gray-500 mb-4">
+                You can create HTTP interfaces by importing from existing sources:
+              </p>
+            </div>
+            
             <button 
               @click="importFromCurl"
               class="w-full inline-flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
             >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+              </svg>
               Import from cURL
             </button>
             
@@ -368,10 +378,98 @@
               @click="importFromOpenAPI"
               class="w-full inline-flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
             >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
               Import from OpenAPI
             </button>
+            
+            <div class="border-t border-gray-200 pt-4 mt-4">
+              <h4 class="text-sm font-medium text-gray-700 mb-2">Interface Creation Guide</h4>
+              <div class="text-xs text-gray-600 space-y-2">
+                <p>
+                  <span class="font-medium">Basic Information:</span> 
+                  Start by providing a name, description, HTTP method, and the URL path.
+                </p>
+                <p>
+                  <span class="font-medium">Parameters:</span> 
+                  Define query, path, or header parameters required by your API.
+                </p>
+                <p>
+                  <span class="font-medium">Request Body:</span> 
+                  For POST/PUT/PATCH methods, define the request body schema and example.
+                </p>
+                <p>
+                  <span class="font-medium">Responses:</span> 
+                  Add expected response status codes with their schemas and examples.
+                </p>
+              </div>
+            </div>
           </div>
         </AppCard>
+      </div>
+    </div>
+  </div>
+
+  <!-- cURL Import Modal -->
+  <div v-if="showCurlModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4">
+      <div class="p-4 border-b border-gray-200">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-semibold text-gray-800">Import from cURL</h2>
+          <button @click="closeCurlImportModal" class="text-gray-500 hover:text-gray-700">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="p-6">
+        <div class="space-y-4">
+          <div>
+            <p class="text-sm text-gray-600 mb-4">
+              Paste your cURL command below. The command will be parsed to create a new HTTP interface with the appropriate method, headers, and parameters.
+            </p>
+            <label for="curl-command" class="block text-sm font-medium text-gray-700">cURL Command</label>
+            <textarea
+              id="curl-command"
+              v-model="curlCommand"
+              rows="6"
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 font-mono text-sm"
+              placeholder='curl -X GET "https://api.example.com/endpoint?param=value" -H "Content-Type: application/json"'
+            ></textarea>
+          </div>
+          
+          <div class="bg-gray-50 p-3 rounded-lg">
+            <h4 class="text-xs font-medium text-gray-700 mb-2">Example cURL Commands</h4>
+            <div class="space-y-2">
+              <div>
+                <div class="text-xs font-medium text-gray-600">GET Request</div>
+                <pre class="text-xs font-mono text-gray-800 mt-1 p-2 bg-gray-100 rounded overflow-x-auto">curl -X GET "https://api.example.com/users?id=123" -H "Accept: application/json"</pre>
+              </div>
+              <div>
+                <div class="text-xs font-medium text-gray-600">POST Request with JSON Body</div>
+                <pre class="text-xs font-mono text-gray-800 mt-1 p-2 bg-gray-100 rounded overflow-x-auto">curl -X POST "https://api.example.com/users" -H "Content-Type: application/json" -d '{"name":"John","email":"john@example.com"}'</pre>
+              </div>
+            </div>
+          </div>
+          
+          <div class="flex justify-end space-x-3">
+            <button 
+              @click="closeCurlImportModal" 
+              class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <AppButton 
+              @click="importFromCurlModal" 
+              :loading="importingCurl"
+              :disabled="!curlCommand"
+            >
+              Import
+            </AppButton>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -503,29 +601,43 @@ async function createInterface() {
   }
 }
 
-// Import from cURL
-function importFromCurl() {
-  const curlCommand = prompt('Enter cURL command:');
-  if (!curlCommand) return;
+// Add these functions to the script section
+const showCurlModal = ref(false);
+const curlCommand = ref('');
+const importingCurl = ref(false);
+
+function openCurlImportModal() {
+  showCurlModal.value = true;
+}
+
+function closeCurlImportModal() {
+  showCurlModal.value = false;
+}
+
+async function importFromCurlModal() {
+  if (!curlCommand.value) {
+    alert('Please enter a cURL command');
+    return;
+  }
   
   try {
-    creating.value = true;
-    $api.httpInterfaces.createFromCurl({ curl: curlCommand })
-      .then(response => {
-        router.push(`/http-interfaces/${response.data.id}`);
-      })
-      .catch(error => {
-        console.error('Failed to import from cURL:', error);
-        alert(`Failed to import from cURL: ${error.response?.data?.error || error.message || 'Unknown error'}`);
-      })
-      .finally(() => {
-        creating.value = false;
-      });
-  } catch (error) {
-    creating.value = false;
-    console.error('Error parsing cURL command:', error);
-    alert('Invalid cURL command');
+    importingCurl.value = true;
+    const response = await $api.httpInterfaces.createFromCurl({ curl: curlCommand.value });
+    
+    // Navigate to the new interface
+    router.push(`/http-interfaces/${response.data.id}`);
+  } catch (error: any) {
+    console.error('Failed to import from cURL:', error);
+    alert(`Failed to import from cURL: ${error.response?.data?.error || error.message || 'Unknown error'}`);
+  } finally {
+    importingCurl.value = false;
+    closeCurlImportModal();
   }
+}
+
+// Replace the existing importFromCurl function with this one
+function importFromCurl() {
+  openCurlImportModal();
 }
 
 // Import from OpenAPI

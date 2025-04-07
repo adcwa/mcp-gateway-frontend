@@ -186,6 +186,155 @@
               No tools available
             </div>
           </AppCard>
+          
+          <AppCard title="Usage Guide" v-if="mcpServer.status === 'active'">
+            <div class="space-y-4">
+              <div>
+                <h3 class="text-sm font-medium text-gray-700 mb-2">How to Use This MCP Server</h3>
+                <p class="text-sm text-gray-600">This MCP Server is active and ready to use. You can invoke any of the tools using the API endpoint below:</p>
+              </div>
+              
+              <div class="bg-gray-50 p-3 rounded-lg">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="text-xs font-medium text-gray-700">API Endpoint</div>
+                  <button @click="copyEndpoint" class="text-primary-500 hover:text-primary-600 text-xs">
+                    <span class="flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-8m-10 0h2m2 0h2m-6 5v-3m0 0h2m2 0h2" />
+                      </svg>
+                      Copy
+                    </span>
+                  </button>
+                </div>
+                <code class="block text-xs font-mono text-gray-800 break-all">{{ apiEndpoint }}</code>
+              </div>
+              
+              <div class="bg-gray-50 p-3 rounded-lg">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="text-xs font-medium text-gray-700">Example Request (curl)</div>
+                  <button @click="copyCurlExample" class="text-primary-500 hover:text-primary-600 text-xs">
+                    <span class="flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-8m-10 0h2m2 0h2m-6 5v-3m0 0h2m2 0h2" />
+                      </svg>
+                      Copy
+                    </span>
+                  </button>
+                </div>
+                <pre class="text-xs font-mono text-gray-800 overflow-x-auto p-1">{{ curlExample }}</pre>
+              </div>
+              
+              <div v-if="mcpServer.tools && mcpServer.tools.length > 0">
+                <div class="text-sm font-medium text-gray-700 mb-2">Available Tools</div>
+                <div class="overflow-x-auto">
+                  <table class="min-w-full divide-y divide-gray-200">
+                    <thead>
+                      <tr class="bg-gray-50">
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tool Name</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
+                      </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-100">
+                      <tr v-for="tool in mcpServer.tools" :key="tool.name">
+                        <td class="px-3 py-2 text-sm font-medium text-gray-900">{{ tool.name }}</td>
+                        <td class="px-3 py-2 text-sm text-gray-500">{{ tool.description || 'No description' }}</td>
+                        <td class="px-3 py-2">
+                          <span :class="methodClass(tool.requestTemplate.method)" class="text-xs font-medium px-2 py-0.5 rounded">
+                            {{ tool.requestTemplate.method }}
+                          </span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </AppCard>
+          
+          <AppCard title="WASM Mechanism" v-if="mcpServer">
+            <div class="space-y-4">
+              <div>
+                <h3 class="text-sm font-medium text-gray-700">MCP Server Lifecycle</h3>
+                <div class="mt-2 space-y-2">
+                  <div class="flex items-start">
+                    <div class="flex-shrink-0 mt-1">
+                      <span class="inline-flex items-center justify-center h-5 w-5 rounded-full bg-gray-100 text-xs font-medium text-gray-800">1</span>
+                    </div>
+                    <div class="ml-3">
+                      <p class="text-sm text-gray-600">
+                        <span class="font-medium">Create</span>: When you create an MCP Server, it starts in "draft" status. In this state, it cannot be used for API requests.
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div class="flex items-start">
+                    <div class="flex-shrink-0 mt-1">
+                      <span class="inline-flex items-center justify-center h-5 w-5 rounded-full bg-gray-100 text-xs font-medium text-gray-800">2</span>
+                    </div>
+                    <div class="ml-3">
+                      <p class="text-sm text-gray-600">
+                        <span class="font-medium">Compile</span>: The server must be compiled to generate a WASM file. This process transforms your HTTP interfaces into a WASM binary.
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div class="flex items-start">
+                    <div class="flex-shrink-0 mt-1">
+                      <span class="inline-flex items-center justify-center h-5 w-5 rounded-full bg-gray-100 text-xs font-medium text-gray-800">3</span>
+                    </div>
+                    <div class="ml-3">
+                      <p class="text-sm text-gray-600">
+                        <span class="font-medium">Upload (Optional)</span>: You can upload a custom WASM file instead of using the generated one.
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div class="flex items-start">
+                    <div class="flex-shrink-0 mt-1">
+                      <span class="inline-flex items-center justify-center h-5 w-5 rounded-full bg-blue-100 text-xs font-medium text-blue-800">4</span>
+                    </div>
+                    <div class="ml-3">
+                      <p class="text-sm text-gray-600">
+                        <span class="font-medium">Activate</span>: Once compiled and/or a WASM file is uploaded, you can activate the server to make it available for API requests.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <h3 class="text-sm font-medium text-gray-700">Current Status</h3>
+                <div class="mt-2 bg-gray-50 p-3 rounded-lg">
+                  <div class="space-y-2">
+                    <div class="flex justify-between">
+                      <span class="text-sm text-gray-600">Status:</span>
+                      <span :class="statusClass(mcpServer.status)" class="text-xs font-medium px-2.5 py-0.5 rounded-full">
+                        {{ mcpServer.status }}
+                      </span>
+                    </div>
+                    
+                    <div class="flex justify-between">
+                      <span class="text-sm text-gray-600">Compiled:</span>
+                      <span v-if="mcpServer.wasmPath" class="text-xs bg-green-100 text-green-800 px-2.5 py-0.5 rounded-full">Yes</span>
+                      <span v-else class="text-xs bg-yellow-100 text-yellow-800 px-2.5 py-0.5 rounded-full">No</span>
+                    </div>
+                    
+                    <div class="flex justify-between">
+                      <span class="text-sm text-gray-600">WASM File:</span>
+                      <span class="text-xs">{{ mcpServer.wasmPath ? getWasmFilename(mcpServer.wasmPath) : 'None' }}</span>
+                    </div>
+                    
+                    <div class="flex justify-between">
+                      <span class="text-sm text-gray-600">API Ready:</span>
+                      <span v-if="mcpServer.status === 'active'" class="text-xs bg-green-100 text-green-800 px-2.5 py-0.5 rounded-full">Yes</span>
+                      <span v-else class="text-xs bg-red-100 text-red-800 px-2.5 py-0.5 rounded-full">No</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </AppCard>
         </div>
         
         <!-- Sidebar -->
@@ -576,5 +725,56 @@ async function fetchMCPServer() {
   } finally {
     loading.value = false;
   }
+}
+
+// API usage examples
+const apiBaseUrl = computed(() => {
+  const config = useRuntimeConfig();
+  return config.public.apiBaseUrl as string;
+});
+
+const apiEndpoint = computed(() => {
+  if (!mcpServer.value) return '';
+  return `${apiBaseUrl.value}/api/mcp-servers/${mcpServer.value.id}/tools/{tool-name}`;
+});
+
+const curlExample = computed(() => {
+  if (!mcpServer.value || !mcpServer.value.tools || mcpServer.value.tools.length === 0) return '';
+  
+  const tool = mcpServer.value.tools[0];
+  return `curl -X POST "${apiBaseUrl.value}/api/mcp-servers/${mcpServer.value.id}/tools/${tool.name}" \\
+  -H "Content-Type: application/json" \\
+  -d '${generateExampleRequestBody(tool)}'`;
+});
+
+// Helper functions
+function getWasmFilename(path: string): string {
+  if (!path) return 'None';
+  const parts = path.split('/');
+  return parts[parts.length - 1];
+}
+
+function generateExampleRequestBody(tool: any): string {
+  // Extract parameters from the URL template
+  const url = tool.requestTemplate.url;
+  const regex = /\{([^}]+)\}/g;
+  let match;
+  const params: Record<string, string> = {};
+  
+  while ((match = regex.exec(url)) !== null) {
+    params[match[1]] = `value-for-${match[1]}`;
+  }
+  
+  return JSON.stringify(params, null, 2);
+}
+
+function copyEndpoint() {
+  navigator.clipboard.writeText(apiEndpoint.value);
+  alert('API endpoint copied to clipboard');
+}
+
+function copyCurlExample() {
+  navigator.clipboard.writeText(curlExample.value);
+  alert('cURL example copied to clipboard');
 }
 </script> 

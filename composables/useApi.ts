@@ -24,7 +24,17 @@ export const useApi = () => {
     getVersion: (id: string, version: number) => api.get(`/api/http-interfaces/${id}/versions/${version}`),
     exportOpenAPI: (id: string) => api.get(`/api/http-interfaces/${id}/openapi`),
     createFromCurl: (data: any) => api.post('/api/http-interfaces/from-curl', data),
-    createFromOpenAPI: (data: any) => api.post('/api/http-interfaces/from-openapi', data)
+    createFromOpenAPI: (data: any) => api.post('/api/http-interfaces/from-openapi', data),
+    uploadOpenAPI: (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      return axios.post(`${baseURL}/api/http-interfaces/from-openapi-file`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+    }
   };
   
   // MCP Server API

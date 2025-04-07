@@ -5,12 +5,20 @@
       description="Manage your HTTP interfaces"
     >
       <template #actions>
-        <AppButton @click="navigateToCreate">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-          </svg>
-          Create Interface
-        </AppButton>
+        <div class="flex space-x-2">
+          <AppButton @click="openImportModal" variant="secondary">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Import OpenAPI
+          </AppButton>
+          <AppButton @click="navigateToCreate">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Create Interface
+          </AppButton>
+        </div>
       </template>
     </PageHeader>
     
@@ -88,17 +96,38 @@
         </template>
       </AppCard>
     </div>
+
+    <!-- Import Modal -->
+    <div v-if="showImportModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="p-4 border-b border-gray-200">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xl font-semibold text-gray-800">Import from OpenAPI</h2>
+            <button @click="closeImportModal" class="text-gray-500 hover:text-gray-700">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="p-6">
+          <OpenAPIImport @import-success="closeImportModal" />
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
+import OpenAPIImport from '~/components/OpenAPIImport.vue';
 
 const router = useRouter();
 const { $api } = useNuxtApp();
 
 const interfaces = ref<any[]>([]);
 const loading = ref(true);
+const showImportModal = ref(false);
 
 // Method color mapping
 const methodClass = (method: string) => {
@@ -164,4 +193,14 @@ onMounted(async () => {
     loading.value = false;
   }
 });
+
+// Add function to open the import modal
+function openImportModal() {
+  showImportModal.value = true;
+}
+
+// Add function to close the import modal
+function closeImportModal() {
+  showImportModal.value = false;
+}
 </script> 
