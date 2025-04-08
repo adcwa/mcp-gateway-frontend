@@ -95,6 +95,64 @@
             </div>
           </AppCard>
           
+          <!-- HTTP Interfaces Card -->
+          <AppCard title="HTTP Interfaces" v-if="mcpServer.tools && mcpServer.tools.length > 0">
+            <div class="mb-4">
+              <p class="text-sm text-gray-500">
+                This MCP server was created from the following HTTP interfaces:
+              </p>
+            </div>
+            
+            <div v-if="loadingHttpInterfaces" class="flex justify-center py-4">
+              <div class="animate-spin h-5 w-5 rounded-full border-t-2 border-b-2 border-primary-500"></div>
+            </div>
+            
+            <div v-else-if="httpInterfaces.length === 0" class="text-center py-4">
+              <p class="text-sm text-gray-500">No HTTP interfaces information available</p>
+            </div>
+            
+            <div v-else class="divide-y divide-gray-100">
+              <div 
+                v-for="(item, index) in httpInterfaces" 
+                :key="item.id" 
+                class="py-3"
+              >
+                <div class="flex items-center">
+                  <span :class="methodClass(item.method)" class="text-xs font-medium px-2 py-0.5 rounded mr-2">
+                    {{ item.method }}
+                  </span>
+                  <span class="font-medium text-gray-800">{{ item.name }}</span>
+                </div>
+                <div class="flex justify-between items-center mt-1">
+                  <div class="text-sm text-gray-500 font-mono">{{ item.path }}</div>
+                  <div>
+                    <NuxtLink 
+                      :to="`/http-interfaces/${item.id}`" 
+                      class="text-xs text-primary-600 hover:text-primary-800"
+                    >
+                      View Details
+                    </NuxtLink>
+                  </div>
+                </div>
+                <div v-if="item.description" class="text-sm text-gray-500 mt-1">
+                  {{ item.description }}
+                </div>
+              </div>
+            </div>
+            
+            <div class="mt-4 pt-4 border-t border-gray-100 flex justify-end">
+              <NuxtLink 
+                to="/http-interfaces" 
+                class="text-sm text-primary-600 hover:text-primary-800 flex items-center"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                Manage HTTP Interfaces
+              </NuxtLink>
+            </div>
+          </AppCard>
+          
           <!-- Add WASM File Upload Card -->
           <AppCard title="WASM File Management">
             <div class="space-y-6">
@@ -482,7 +540,8 @@ const compiling = ref(false);
 const activating = ref(false);
 const mcpServer = ref<any>(null);
 const versions = ref<any[]>([]);
-const httpInterfaces = ref<any[]>([]); // Mock data for now, should be fetched
+const httpInterfaces = ref<any[]>([]);
+const loadingHttpInterfaces = ref(true);
 
 // Test tool modal state
 const showTestModal = ref(false);
@@ -495,7 +554,7 @@ const testResult = ref('');
 const uploadFile = ref<File | null>(null);
 const uploading = ref(false);
 const wasmFiles = ref<any[]>([]);
-const loadingFiles = ref(false);
+const loadingFiles = ref(true);
 
 interface WasmFile {
   id: string;
@@ -712,57 +771,40 @@ async function deleteWasmFile(file: WasmFile) {
   }
 }
 
-// Fetch MCP server data and versions
-onMounted(async () => {
-  try {
-    const id = route.params.id as string;
-    const [serverResponse, versionsResponse] = await Promise.all([
-      $api.mcpServers.getById(id),
-      $api.mcpServers.getVersions(id)
-    ]);
-    
-    mcpServer.value = serverResponse.data;
-    versions.value = versionsResponse.data;
-    
-    // Mock HTTP interfaces data
-    httpInterfaces.value = [
-      {
-        id: 'mock-1',
-        name: 'Get User',
-        method: 'GET',
-        path: '/api/users/{id}'
-      },
-      {
-        id: 'mock-2',
-        name: 'Create User',
-        method: 'POST',
-        path: '/api/users'
-      }
-    ];
-  } catch (error) {
-    console.error('Failed to fetch MCP server:', error);
-  } finally {
-    loading.value = false;
-  }
-});
-
-// Fetch WASM files when the server is loaded
-watch(mcpServer, async (newServer) => {
-  if (newServer && newServer.id) {
-    await fetchWasmFiles();
-  }
-}, { immediate: true });
-
-// Add fetchMCPServer function if it doesn't exist
+// Fetch MCP server
 async function fetchMCPServer() {
+  loading.value = true;
   try {
-    loading.value = true;
     const response = await $api.mcpServers.getById(route.params.id as string);
     mcpServer.value = response.data;
+    
+    // Also fetch WASM files
+    fetchWasmFiles();
+    
+    // Fetch HTTP interfaces used to create this MCP server
+    if (mcpServer.value && mcpServer.value.tools && mcpServer.value.tools.length > 0) {
+      await fetchHttpInterfaces();
+    }
   } catch (error) {
-    console.error('Error fetching MCP server:', error);
+    console.error('Failed to fetch MCP server:', error);
+    mcpServer.value = null;
   } finally {
     loading.value = false;
+  }
+}
+
+// Fetch HTTP interfaces that were used to create this MCP server
+async function fetchHttpInterfaces() {
+  loadingHttpInterfaces.value = true;
+  try {
+    // Use the dedicated endpoint to get HTTP interfaces
+    const response = await $api.mcpServers.getHttpInterfaces(route.params.id as string);
+    httpInterfaces.value = response.data;
+  } catch (error) {
+    console.error('Failed to fetch HTTP interfaces:', error);
+    httpInterfaces.value = [];
+  } finally {
+    loadingHttpInterfaces.value = false;
   }
 }
 
@@ -821,4 +863,22 @@ function copyTestResult() {
   navigator.clipboard.writeText(testResult.value);
   alert('Test result copied to clipboard');
 }
+
+// Fetch MCP server versions
+async function fetchVersions() {
+  try {
+    const id = route.params.id as string;
+    const response = await $api.mcpServers.getVersions(id);
+    versions.value = response.data;
+  } catch (error) {
+    console.error('Failed to fetch MCP server versions:', error);
+    versions.value = [];
+  }
+}
+
+// Load on mount
+onMounted(async () => {
+  await fetchMCPServer();
+  await fetchVersions();
+});
 </script> 

@@ -48,6 +48,7 @@ export const useApi = () => {
     getVersion: (id: string, version: number) => api.get(`/api/mcp-servers/${id}/versions/${version}`),
     compile: (id: string) => api.post(`/api/mcp-servers/${id}/compile`),
     activate: (id: string) => api.post(`/api/mcp-servers/${id}/activate`),
+    getHttpInterfaces: (id: string) => api.get(`/api/mcp-servers/${id}/http-interfaces`),
     invokeTool: (id: string, tool: string, data: any) => api.post(
       `/api/mcp-servers/${id}/tools/${tool}`, 
       data,
