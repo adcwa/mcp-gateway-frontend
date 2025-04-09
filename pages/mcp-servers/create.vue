@@ -230,6 +230,7 @@
 <script setup lang="ts">
 import { ref, reactive, watch, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { toast } from '~/utils/toast';
 
 const router = useRouter();
 const { $api } = useNuxtApp();
@@ -325,26 +326,36 @@ watch(selectedHttpIds, (newValue) => {
 
 // Create server
 async function createServer() {
-  // Validate
-  if (!serverData.name) {
-    alert('Please enter a name for the server');
-    return;
-  }
-  
-  if (serverData.httpIds.length === 0) {
-    alert('Please select at least one HTTP interface');
-    return;
-  }
-  
   try {
-    creating.value = true;
-    const response = await $api.mcpServers.create(serverData);
+    // Validate required fields
+    if (!serverData.name) {
+      toast.warning('验证失败', '请输入服务器名称');
+      return;
+    }
     
-    // Navigate to the new server
+    if (serverData.httpIds.length === 0) {
+      toast.warning('验证失败', '请至少选择一个HTTP接口');
+      return;
+    }
+    
+    creating.value = true;
+    
+    // Construct the payload
+    const createPayload = {
+      name: serverData.name,
+      description: serverData.description,
+      HTTPIDs: serverData.httpIds
+    };
+    
+    // Send create request
+    const response = await $api.mcpServers.create(createPayload);
+    
+    // Navigate to the new server details page
     router.push(`/mcp-servers/${response.data.id}`);
+    toast.success('创建成功', `MCP服务器"${serverData.name}"已创建`);
   } catch (error: any) {
     console.error('Failed to create MCP server:', error);
-    alert(`Failed to create MCP server: ${error.response?.data?.error || error.message || 'Unknown error'}`);
+    toast.error('创建失败', `创建MCP服务器失败: ${error.response?.data?.error || error.message || '未知错误'}`);
   } finally {
     creating.value = false;
   }

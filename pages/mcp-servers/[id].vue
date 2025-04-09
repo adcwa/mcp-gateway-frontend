@@ -530,6 +530,7 @@
 import { useRouter, useRoute } from 'vue-router';
 import FileUpload from '~/components/FileUpload.vue';
 import FileList from '~/components/FileList.vue';
+import { toast } from '~/utils/toast';
 
 const router = useRouter();
 const route = useRoute();
@@ -607,18 +608,19 @@ const loadVersion = async (version: number) => {
 };
 
 // Compile server
-const compileServer = async () => {
+async function compileServer() {
   try {
     compiling.value = true;
     const response = await $api.mcpServers.compile(route.params.id as string);
     mcpServer.value = { ...mcpServer.value, wasmPath: response.data.wasmPath };
-  } catch (error) {
+    toast.success('编译成功', '服务器编译成功');
+  } catch (error: any) {
     console.error('Failed to compile server:', error);
-    alert('Failed to compile server');
+    toast.error('编译失败', '服务器编译失败，请稍后重试');
   } finally {
     compiling.value = false;
   }
-};
+}
 
 // Activate server
 const activateServer = async () => {
@@ -626,9 +628,10 @@ const activateServer = async () => {
     activating.value = true;
     await $api.mcpServers.activate(route.params.id as string);
     mcpServer.value = { ...mcpServer.value, status: 'active' };
-  } catch (error) {
+    toast.success('激活成功', '服务器激活成功');
+  } catch (error: any) {
     console.error('Failed to activate server:', error);
-    alert('Failed to activate server');
+    toast.error('激活失败', '服务器激活失败，请稍后重试');
   } finally {
     activating.value = false;
   }
@@ -636,7 +639,7 @@ const activateServer = async () => {
 
 // Navigate to edit page
 const editServer = () => {
-  router.push(`/mcp-servers/${route.params.id}/edit`);
+  router.push(`/mcp-servers/${route.params.id}-edit`);
 };
 
 // Test a tool
@@ -729,13 +732,13 @@ async function uploadWasmFile() {
     uploadFile.value = null;
     
     // Show success message
-    alert('File uploaded successfully');
+    toast.success('上传成功', '文件已成功上传');
     
     // Refresh server details
     await fetchMCPServer();
   } catch (error: any) {
     console.error('Error uploading WASM file:', error);
-    alert('Error uploading file: ' + (error.response?.data?.error || error.message));
+    toast.error('上传失败', '文件上传失败: ' + (error.response?.data?.error || error.message));
   } finally {
     uploading.value = false;
   }
@@ -767,7 +770,7 @@ async function deleteWasmFile(file: WasmFile) {
     await fetchWasmFiles();
   } catch (error: any) {
     console.error('Error deleting WASM file:', error);
-    alert('Error deleting file: ' + (error.response?.data?.error || error.message));
+    toast.error('删除失败', '文件删除失败: ' + (error.response?.data?.error || error.message));
   }
 }
 
@@ -851,17 +854,17 @@ function generateExampleRequestBody(tool: any): string {
 
 function copyEndpoint() {
   navigator.clipboard.writeText(apiEndpoint.value);
-  alert('API endpoint copied to clipboard');
+  toast.success('复制成功', 'API端点已复制到剪贴板');
 }
 
 function copyCurlExample() {
   navigator.clipboard.writeText(curlExample.value);
-  alert('cURL example copied to clipboard');
+  toast.success('复制成功', 'cURL示例已复制到剪贴板');
 }
 
 function copyTestResult() {
-  navigator.clipboard.writeText(testResult.value);
-  alert('Test result copied to clipboard');
+  navigator.clipboard.writeText(testResult.value || '');
+  toast.success('复制成功', '测试结果已复制到剪贴板');
 }
 
 // Fetch MCP server versions

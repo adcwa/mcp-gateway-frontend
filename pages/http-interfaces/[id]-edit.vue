@@ -478,6 +478,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { toast } from '~/utils/toast';
 
 const router = useRouter();
 const route = useRoute();
@@ -566,7 +567,7 @@ async function fetchHttpInterface() {
     }
   } catch (error: any) {
     console.error('Failed to fetch HTTP interface:', error);
-    alert(`Failed to fetch HTTP interface: ${error.response?.data?.error || error.message || 'Unknown error'}`);
+    toast.error('加载失败', `无法加载HTTP接口: ${error.response?.data?.error || error.message || '未知错误'}`);
   } finally {
     loading.value = false;
   }
@@ -696,12 +697,12 @@ async function updateInterface() {
     
     // Validate required fields
     if (!httpInterface.value.name?.trim()) {
-      alert('Interface name is required');
+      toast.warning('验证失败', '请输入接口名称');
       return;
     }
     
     if (!httpInterface.value.path?.trim()) {
-      alert('Interface path is required');
+      toast.warning('验证失败', '请输入接口路径');
       return;
     }
     
@@ -746,7 +747,7 @@ async function updateInterface() {
       console.log('Update successful:', response.data);
       
       // Show success message
-      alert('HTTP接口更新成功');
+      toast.success('更新成功', 'HTTP接口已更新');
       
       // Navigate back to the interface details page
       router.push(`/http-interfaces/${id}`);
@@ -755,16 +756,16 @@ async function updateInterface() {
       
       let errorMessage = '更新接口失败';
       if (apiError.response?.data?.error) {
-        errorMessage += `: ${apiError.response.data.error}`;
+        errorMessage = apiError.response.data.error;
       } else if (apiError.message) {
-        errorMessage += `: ${apiError.message}`;
+        errorMessage = apiError.message;
       }
       
-      alert(errorMessage);
+      toast.error('更新失败', errorMessage);
     }
   } catch (error: any) {
     console.error('Error preparing HTTP interface update:', error);
-    alert(`准备更新数据时出错: ${error.message || '未知错误'}`);
+    toast.error('准备数据失败', `准备更新数据时出错: ${error.message || '未知错误'}`);
   } finally {
     updating.value = false;
   }
@@ -778,10 +779,10 @@ function forceRefresh() {
   
   // Re-fetch the data
   fetchHttpInterface().then(() => {
-    alert('Form data refreshed from server.');
+    toast.info('刷新完成', '表单数据已从服务器刷新');
   }).catch(error => {
     console.error('Failed to refresh data:', error);
-    alert('Failed to refresh data. See console for details.');
+    toast.error('刷新失败', '无法刷新数据，请查看控制台以获取详细信息');
   }).finally(() => {
     loading.value = false;
   });

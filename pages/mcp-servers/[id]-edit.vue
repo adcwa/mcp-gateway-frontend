@@ -173,7 +173,7 @@
             <AppButton 
               variant="secondary" 
               full-width
-              @click="router.push(`/mcp-servers/${route.params.id}`)"
+              @click="router.push(`/mcp-servers/${route.params.id.toString().replace('-edit', '')}`)"
             >
               取消
             </AppButton>
@@ -234,6 +234,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { toast } from '~/utils/toast';
 
 const router = useRouter();
 const route = useRoute();
@@ -340,7 +341,10 @@ const toggleSelectAll = () => {
 const loadMCPServer = async () => {
   try {
     loading.value = true;
-    const response = await $api.mcpServers.getById(route.params.id as string);
+    // Extract the actual server ID from the route parameter by removing '-edit' suffix
+    const serverId = (route.params.id as string).replace('-edit', '');
+    
+    const response = await $api.mcpServers.getById(serverId);
     originalServer.value = response.data;
     
     // 填充表单数据
@@ -352,7 +356,7 @@ const loadMCPServer = async () => {
     
   } catch (error) {
     console.error('加载 MCP 服务器失败:', error);
-    alert('加载 MCP 服务器失败');
+    toast.error('加载失败', '无法加载MCP服务器数据');
     router.push('/mcp-servers');
   } finally {
     loading.value = false;
@@ -367,8 +371,11 @@ const loadHttpInterfaces = async () => {
     const response = await $api.httpInterfaces.getAll();
     httpInterfaces.value = response.data;
     
+    // Extract the actual server ID from the route parameter by removing '-edit' suffix
+    const serverId = (route.params.id as string).replace('-edit', '');
+    
     // 加载当前服务器使用的 HTTP 接口
-    const httpInterfacesResponse = await $api.mcpServers.getHttpInterfaces(route.params.id as string);
+    const httpInterfacesResponse = await $api.mcpServers.getHttpInterfaces(serverId);
     const serverInterfaces = httpInterfacesResponse.data;
     
     // 设置已选 HTTP 接口 ID
@@ -389,17 +396,20 @@ watch(selectedHttpIds, (newValue) => {
 const updateServer = async () => {
   // 校验
   if (!serverData.name) {
-    alert('请输入服务器名称');
+    toast.warning('验证失败', '请输入服务器名称');
     return;
   }
   
   if (selectedHttpIds.value.length === 0) {
-    alert('请至少选择一个 HTTP 接口');
+    toast.warning('验证失败', '请至少选择一个HTTP接口');
     return;
   }
   
   try {
     updating.value = true;
+    
+    // Extract the actual server ID from the route parameter by removing '-edit' suffix
+    const serverId = (route.params.id as string).replace('-edit', '');
     
     // 获取选中的 HTTP 接口
     const selectedInterfaces = httpInterfaces.value.filter(item => selectedHttpIds.value.includes(item.id));
@@ -426,18 +436,20 @@ const updateServer = async () => {
       ...originalServer.value,
       name: serverData.name,
       description: serverData.description,
+      HTTPIDs: selectedHttpIds.value,
       tools: tools,
       allowTools: allowTools
     };
     
     // 发送更新请求
-    await $api.mcpServers.update(route.params.id as string, updateData);
+    await $api.mcpServers.update(serverId, updateData);
     
     // 导航到详情页
-    router.push(`/mcp-servers/${route.params.id}`);
+    router.push(`/mcp-servers/${serverId}`);
+    toast.success('更新成功', 'MCP服务器已更新');
   } catch (error: any) {
     console.error('更新 MCP 服务器失败:', error);
-    alert(`更新 MCP 服务器失败: ${error.response?.data?.error || error.message || '未知错误'}`);
+    toast.error('更新失败', `更新MCP服务器失败: ${error.response?.data?.error || error.message || '未知错误'}`);
   } finally {
     updating.value = false;
   }

@@ -239,6 +239,7 @@
 
 <script setup lang="ts">
 import { useRouter, useRoute } from 'vue-router';
+import { toast } from '~/utils/toast';
 
 const router = useRouter();
 const route = useRoute();
@@ -307,21 +308,25 @@ const loadVersion = async (version: number) => {
 const openExportOpenAPI = async () => {
   try {
     const response = await $api.httpInterfaces.exportOpenAPI(route.params.id as string);
-    const openAPIData = response.data;
     
-    // Create a downloadable JSON file
-    const blob = new Blob([JSON.stringify(openAPIData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
+    // Create a blob from the response data
+    const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' });
+    
+    // Create a link and trigger download
+    const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${httpInterface.value.name.toLowerCase().replace(/\s+/g, '-')}-openapi.json`;
+    a.download = `openapi-${httpInterface.value.name.toLowerCase().replace(/\s+/g, '-')}.json`;
     document.body.appendChild(a);
     a.click();
+    
+    // Cleanup
+    window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  } catch (error) {
+    toast.success('导出成功', 'OpenAPI规范已成功导出');
+  } catch (error: any) {
     console.error('Failed to export OpenAPI:', error);
-    alert('Failed to export OpenAPI');
+    toast.error('导出失败', '无法导出OpenAPI规范');
   }
 };
 

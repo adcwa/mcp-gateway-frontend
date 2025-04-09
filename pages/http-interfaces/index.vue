@@ -100,7 +100,7 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
               </button>
-              <button @click="confirmDelete(item)" class="text-gray-500 hover:text-red-500 transition-colors">
+              <button @click="openDeleteConfirm(item)" class="text-gray-500 hover:text-red-500 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
@@ -116,7 +116,7 @@
       <div class="bg-white rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div class="p-4 border-b border-gray-200">
           <div class="flex items-center justify-between">
-            <h2 class="text-xl font-semibold text-gray-800">Import from OpenAPI</h2>
+            <h2 class="text-xl font-semibold text-gray-800">从OpenAPI导入</h2>
             <button @click="closeImportModal" class="text-gray-500 hover:text-gray-700">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -125,16 +125,28 @@
           </div>
         </div>
         <div class="p-6">
-          <OpenAPIImport @import-success="closeImportModal" />
+          <OpenAPIImport @import-success="closeImportModal" @refresh-interfaces="fetchInterfaces" />
         </div>
       </div>
     </div>
+    
+    <!-- 删除确认对话框 -->
+    <ConfirmDialog
+      v-model="showDeleteConfirm"
+      title="删除HTTP接口"
+      :message="`您确定要删除 '${interfaceToDelete?.name || ''}' 接口吗？此操作无法撤销。`"
+      confirm-text="删除"
+      type="danger"
+      @confirm="deleteInterface(interfaceToDelete?.id)"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
 import OpenAPIImport from '~/components/OpenAPIImport.vue';
+import { toast } from '~/utils/toast';
+import ConfirmDialog from '~/components/ConfirmDialog.vue';
 
 const router = useRouter();
 const { $api } = useNuxtApp();
@@ -143,6 +155,8 @@ const interfaces = ref<any[]>([]);
 const loading = ref(true);
 const showImportModal = ref(false);
 const selectedInterfaces = ref<string[]>([]);
+const showDeleteConfirm = ref(false);
+const interfaceToDelete = ref<any>(null);
 
 // Method color mapping
 const methodClass = (method: string) => {
@@ -172,10 +186,16 @@ function importOpenAPI() {
   showImportModal.value = true;
 }
 
+// Close import modal
+function closeImportModal() {
+  showImportModal.value = false;
+  fetchInterfaces(); // Refresh the interfaces list when modal is closed
+}
+
 // Navigate to create MCP server with selected interfaces
 function createMCPServer() {
   if (selectedInterfaces.value.length === 0) {
-    alert('Please select at least one HTTP interface');
+    toast.warning('创建失败', '请至少选择一个HTTP接口');
     return;
   }
   
@@ -198,6 +218,11 @@ function toggleInterfaceSelection(id: string) {
   }
 }
 
+// Add onMounted hook to fetch interfaces when component mounts
+onMounted(() => {
+  fetchInterfaces();
+});
+
 // Export OpenAPI
 const openExportOpenAPI = async (item: any) => {
   try {
@@ -214,44 +239,48 @@ const openExportOpenAPI = async (item: any) => {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  } catch (error) {
+    
+    toast.success('导出成功', 'OpenAPI规范已成功导出');
+  } catch (error: any) {
     console.error('Failed to export OpenAPI:', error);
-    alert('Failed to export OpenAPI');
+    toast.error('导出失败', '无法导出OpenAPI规范');
   }
 };
 
-// Delete interface
-const confirmDelete = async (item: any) => {
-  if (confirm(`Are you sure you want to delete "${item.name}"?`)) {
-    try {
-      await $api.httpInterfaces.delete(item.id);
-      interfaces.value = interfaces.value.filter(i => i.id !== item.id);
-    } catch (error) {
-      console.error('Failed to delete interface:', error);
-      alert('Failed to delete interface');
-    }
-  }
-};
-
-// Fetch HTTP interfaces
-onMounted(async () => {
-  try {
-    const response = await $api.httpInterfaces.getAll();
-    interfaces.value = response.data;
-  } catch (error) {
-    console.error('Failed to fetch HTTP interfaces:', error);
-  } finally {
-    loading.value = false;
-  }
-});
-
-// Add function to open the import modal
-function openImportModal() {
-  showImportModal.value = true;
+// Open delete confirmation dialog
+function openDeleteConfirm(item: any) {
+  interfaceToDelete.value = item;
+  showDeleteConfirm.value = true;
 }
 
-// Add function to close the import modal
-function closeImportModal() {
-  showImportModal.value = false;
+// Delete interface
+async function deleteInterface(id?: string) {
+  if (!id) return;
+  
+  try {
+    await $api.httpInterfaces.delete(id);
+    
+    // Remove from list
+    interfaces.value = interfaces.value.filter(i => i.id !== id);
+    toast.success('删除成功', 'HTTP接口已成功删除');
+  } catch (error: any) {
+    console.error('Failed to delete interface:', error);
+    toast.error('删除失败', '无法删除HTTP接口');
+  }
+}
+
+// Add function to fetch interfaces
+function fetchInterfaces() {
+  loading.value = true;
+  $api.httpInterfaces.getAll()
+    .then(response => {
+      interfaces.value = response.data;
+    })
+    .catch(error => {
+      console.error('Failed to fetch HTTP interfaces:', error);
+    })
+    .finally(() => {
+      loading.value = false;
+    });
 }
 </script> 

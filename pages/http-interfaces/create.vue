@@ -497,11 +497,32 @@
       </div>
     </div>
   </div>
+
+  <!-- OpenAPI Import Modal -->
+  <div v-if="showOpenAPIModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div class="p-4 border-b border-gray-200">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-semibold text-gray-800">从OpenAPI导入</h2>
+          <button @click="closeOpenAPIModal" class="text-gray-500 hover:text-gray-700">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="p-6">
+        <OpenAPIImport @import-success="onOpenAPIImportSuccess" />
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue';
 import { useRouter } from 'vue-router';
+import OpenAPIImport from '~/components/OpenAPIImport.vue';
+import { toast } from '~/utils/toast';
 
 const router = useRouter();
 const { $api } = useNuxtApp();
@@ -594,12 +615,12 @@ function toggleResponseBody(index: number) {
 async function createInterface() {
   // Validate
   if (!httpInterface.name) {
-    alert('Please enter a name for the interface');
+    toast.error('验证失败', '请输入接口名称');
     return;
   }
   
   if (!httpInterface.path) {
-    alert('Please enter a path for the interface');
+    toast.error('验证失败', '请输入接口路径');
     return;
   }
   
@@ -617,20 +638,24 @@ async function createInterface() {
     
     // Navigate to the new interface
     router.push(`/http-interfaces/${response.data.id}`);
+    toast.success('创建成功', `HTTP接口 "${data.name}" 已创建`);
   } catch (error: any) {
     console.error('Failed to create interface:', error);
-    alert(`Failed to create interface: ${error.response?.data?.error || error.message || 'Unknown error'}`);
+    toast.error('创建失败', error.response?.data?.error || error.message || '未知错误');
   } finally {
     creating.value = false;
   }
 }
 
-// Add these functions to the script section
+// Add these variables for cURL import
 const showCurlModal = ref(false);
 const curlCommand = ref('');
 const curlName = ref('');
 const curlDescription = ref('');
 const importingCurl = ref(false);
+
+// Add these variables for OpenAPI import
+const showOpenAPIModal = ref(false);
 
 function openCurlImportModal() {
   showCurlModal.value = true;
@@ -642,12 +667,12 @@ function closeCurlImportModal() {
 
 async function importFromCurlModal() {
   if (!curlCommand.value) {
-    alert('Please enter a cURL command');
+    toast.warning('验证失败', '请输入cURL命令');
     return;
   }
   
   if (!curlName.value) {
-    alert('Please enter a name for the interface');
+    toast.warning('验证失败', '请输入接口名称');
     return;
   }
   
@@ -661,9 +686,10 @@ async function importFromCurlModal() {
     
     // Navigate to the new interface
     router.push(`/http-interfaces/${response.data.id}`);
+    toast.success('导入成功', `HTTP接口 "${curlName.value}" 已从cURL导入`);
   } catch (error: any) {
     console.error('Failed to import from cURL:', error);
-    alert(`Failed to import from cURL: ${error.response?.data?.error || error.message || 'Unknown error'}`);
+    toast.error('导入失败', error.response?.data?.error || error.message || '未知错误');
   } finally {
     importingCurl.value = false;
     closeCurlImportModal();
@@ -675,8 +701,27 @@ function importFromCurl() {
   openCurlImportModal();
 }
 
-// Import from OpenAPI
+// Replace the existing importFromOpenAPI function with this one
 function importFromOpenAPI() {
-  alert('This feature is not yet implemented. Please check back later.');
+  showOpenAPIModal.value = true;
+}
+
+// Close OpenAPI modal
+function closeOpenAPIModal() {
+  showOpenAPIModal.value = false;
+}
+
+// Handle OpenAPI import success
+function onOpenAPIImportSuccess(result: any) {
+  closeOpenAPIModal();
+  // If there's only one interface imported, navigate to it
+  if (result.count === 1 && result.interfaceIds.length === 1) {
+    router.push(`/http-interfaces/${result.interfaceIds[0]}`);
+    toast.success('导入成功', `已成功导入1个HTTP接口`);
+  } else if (result.count > 1) {
+    // If multiple interfaces were imported, navigate to the interfaces list
+    router.push('/http-interfaces');
+    toast.success('导入成功', `已成功导入${result.count}个HTTP接口`);
+  }
 }
 </script> 

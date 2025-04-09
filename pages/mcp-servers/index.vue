@@ -71,12 +71,12 @@
             </NuxtLink>
             
             <div class="flex space-x-2">
-              <button v-if="server.status !== 'active'" @click="activateServer(server)" class="text-gray-500 hover:text-green-500 transition-colors">
+              <button v-if="server.status !== 'active'" @click="activateServer(server.id)" class="text-gray-500 hover:text-green-500 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                 </svg>
               </button>
-              <button @click="confirmDelete(server)" class="text-gray-500 hover:text-red-500 transition-colors">
+              <button @click="openDeleteConfirm(server)" class="text-gray-500 hover:text-red-500 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
@@ -86,17 +86,32 @@
         </template>
       </AppCard>
     </div>
+    
+    <!-- 删除确认对话框 -->
+    <ConfirmDialog
+      v-model="showDeleteConfirm"
+      title="删除MCP服务器"
+      :message="`您确定要删除 '${serverToDelete?.name || ''}' 服务器吗？此操作无法撤销。`"
+      confirm-text="删除"
+      type="danger"
+      @confirm="deleteServer(serverToDelete?.id)"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { toast } from '~/utils/toast';
+import ConfirmDialog from '~/components/ConfirmDialog.vue';
 
 const router = useRouter();
 const { $api } = useNuxtApp();
 
 const servers = ref<any[]>([]);
 const loading = ref(true);
+const showDeleteConfirm = ref(false);
+const serverToDelete = ref<any>(null);
 
 // Status color mapping
 const statusClass = (status: string) => {
@@ -115,32 +130,55 @@ const navigateToCreate = () => {
 };
 
 // Activate server
-const activateServer = async (server: any) => {
+async function activateServer(id: string) {
   try {
-    await $api.mcpServers.activate(server.id);
-    // Update status in UI
-    const index = servers.value.findIndex(s => s.id === server.id);
-    if (index !== -1) {
-      servers.value[index].status = 'active';
+    const serverIndex = servers.value.findIndex(s => s.id === id);
+    if (serverIndex !== -1) {
+      servers.value[serverIndex].activating = true;
     }
-  } catch (error) {
+    
+    await $api.mcpServers.activate(id);
+    
+    // Update server status in the list
+    if (serverIndex !== -1) {
+      servers.value[serverIndex].status = 'active';
+      servers.value[serverIndex].activating = false;
+    }
+    
+    toast.success('激活成功', 'MCP服务器已成功激活');
+  } catch (error: any) {
     console.error('Failed to activate server:', error);
-    alert('Failed to activate server');
+    toast.error('激活失败', '服务器激活失败');
+    
+    // Reset activating state
+    const serverIndex = servers.value.findIndex(s => s.id === id);
+    if (serverIndex !== -1) {
+      servers.value[serverIndex].activating = false;
+    }
   }
-};
+}
+
+// 打开删除确认对话框
+function openDeleteConfirm(server: any) {
+  serverToDelete.value = server;
+  showDeleteConfirm.value = true;
+}
 
 // Delete server
-const confirmDelete = async (server: any) => {
-  if (confirm(`Are you sure you want to delete "${server.name}"?`)) {
-    try {
-      await $api.mcpServers.delete(server.id);
-      servers.value = servers.value.filter(s => s.id !== server.id);
-    } catch (error) {
-      console.error('Failed to delete server:', error);
-      alert('Failed to delete server');
-    }
+async function deleteServer(id?: string) {
+  if (!id) return;
+  
+  try {
+    await $api.mcpServers.delete(id);
+    
+    // Remove from list
+    servers.value = servers.value.filter(s => s.id !== id);
+    toast.success('删除成功', 'MCP服务器已成功删除');
+  } catch (error: any) {
+    console.error('Failed to delete server:', error);
+    toast.error('删除失败', '无法删除MCP服务器');
   }
-};
+}
 
 // Fetch MCP servers
 onMounted(async () => {
