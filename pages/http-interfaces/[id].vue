@@ -327,7 +327,7 @@ const openExportOpenAPI = async () => {
 
 // Navigate to edit page
 const editInterface = () => {
-  router.push(`/http-interfaces/${route.params.id}/edit`);
+  router.push(`/http-interfaces/${route.params.id}-edit`);
 };
 
 // Create MCP Server
