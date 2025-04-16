@@ -36,14 +36,14 @@
                 Activate
               </AppButton>
               <AppButton 
-                v-if="!mcpServer.wasmPath" 
-                @click="compileServer"
-                :loading="compiling"
+                v-if="mcpServer.status !== 'active'" 
+                @click="registerServer"
+                :loading="registering"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                 </svg>
-                Compile
+                Register
               </AppButton>
               <AppButton 
                 @click="editServer"
@@ -67,12 +67,6 @@
               <span :class="statusClass(mcpServer.status)" class="text-xs font-medium px-2.5 py-0.5 rounded-full mr-2">
                 {{ mcpServer.status }}
               </span>
-              <span v-if="mcpServer.wasmPath" class="text-xs bg-blue-100 text-blue-800 px-2.5 py-0.5 rounded-full">
-                Compiled
-              </span>
-              <span v-else class="text-xs bg-yellow-100 text-yellow-800 px-2.5 py-0.5 rounded-full">
-                Not Compiled
-              </span>
             </div>
             
             <div class="mt-3 grid grid-cols-2 gap-4">
@@ -87,10 +81,6 @@
               <div>
                 <div class="text-sm text-gray-500">Last Updated</div>
                 <div class="font-medium">{{ formatDate(mcpServer.updatedAt) }}</div>
-              </div>
-              <div v-if="mcpServer.wasmPath">
-                <div class="text-sm text-gray-500">WASM Path</div>
-                <div class="font-medium truncate">{{ mcpServer.wasmPath }}</div>
               </div>
             </div>
           </AppCard>
@@ -150,40 +140,6 @@
                 </svg>
                 Manage HTTP Interfaces
               </NuxtLink>
-            </div>
-          </AppCard>
-          
-          <!-- Add WASM File Upload Card -->
-          <AppCard title="WASM File Management">
-            <div class="space-y-6">
-              <div>
-                <h3 class="text-sm font-medium text-gray-700 mb-2">Upload WASM File</h3>
-                <FileUpload 
-                  accept=".wasm"
-                  acceptDescription="WebAssembly (.wasm) files only"
-                  @file-selected="onFileSelected"
-                />
-                
-                <div v-if="uploadFile" class="mt-4 flex justify-end">
-                  <AppButton 
-                    @click="uploadWasmFile" 
-                    :loading="uploading"
-                    size="sm"
-                  >
-                    Upload File
-                  </AppButton>
-                </div>
-              </div>
-              
-              <div class="border-t border-gray-200 pt-5">
-                <h3 class="text-sm font-medium text-gray-700 mb-3">Uploaded WASM Files</h3>
-                <FileList 
-                  :files="wasmFiles" 
-                  :loading="loadingFiles"
-                  @download="downloadWasmFile"
-                  @delete="deleteWasmFile"
-                />
-              </div>
             </div>
           </AppCard>
           
@@ -309,123 +265,11 @@
               </div>
             </div>
           </AppCard>
-          
-          <AppCard title="WASM Mechanism" v-if="mcpServer">
-            <div class="space-y-4">
-              <div>
-                <h3 class="text-sm font-medium text-gray-700">MCP Server Lifecycle</h3>
-                <div class="mt-2 space-y-2">
-                  <div class="flex items-start">
-                    <div class="flex-shrink-0 mt-1">
-                      <span class="inline-flex items-center justify-center h-5 w-5 rounded-full bg-gray-100 text-xs font-medium text-gray-800">1</span>
-                    </div>
-                    <div class="ml-3">
-                      <p class="text-sm text-gray-600">
-                        <span class="font-medium">Create</span>: When you create an MCP Server, it starts in "draft" status. In this state, it cannot be used for API requests.
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div class="flex items-start">
-                    <div class="flex-shrink-0 mt-1">
-                      <span class="inline-flex items-center justify-center h-5 w-5 rounded-full bg-gray-100 text-xs font-medium text-gray-800">2</span>
-                    </div>
-                    <div class="ml-3">
-                      <p class="text-sm text-gray-600">
-                        <span class="font-medium">Compile</span>: The server must be compiled to generate a WASM file. This process transforms your HTTP interfaces into a WASM binary.
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div class="flex items-start">
-                    <div class="flex-shrink-0 mt-1">
-                      <span class="inline-flex items-center justify-center h-5 w-5 rounded-full bg-gray-100 text-xs font-medium text-gray-800">3</span>
-                    </div>
-                    <div class="ml-3">
-                      <p class="text-sm text-gray-600">
-                        <span class="font-medium">Upload (Optional)</span>: You can upload a custom WASM file instead of using the generated one.
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div class="flex items-start">
-                    <div class="flex-shrink-0 mt-1">
-                      <span class="inline-flex items-center justify-center h-5 w-5 rounded-full bg-blue-100 text-xs font-medium text-blue-800">4</span>
-                    </div>
-                    <div class="ml-3">
-                      <p class="text-sm text-gray-600">
-                        <span class="font-medium">Activate</span>: Once compiled and/or a WASM file is uploaded, you can activate the server to make it available for API requests.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div>
-                <h3 class="text-sm font-medium text-gray-700">Current Status</h3>
-                <div class="mt-2 bg-gray-50 p-3 rounded-lg">
-                  <div class="space-y-2">
-                    <div class="flex justify-between">
-                      <span class="text-sm text-gray-600">Status:</span>
-                      <span :class="statusClass(mcpServer.status)" class="text-xs font-medium px-2.5 py-0.5 rounded-full">
-                        {{ mcpServer.status }}
-                      </span>
-                    </div>
-                    
-                    <div class="flex justify-between">
-                      <span class="text-sm text-gray-600">Compiled:</span>
-                      <span v-if="mcpServer.wasmPath" class="text-xs bg-green-100 text-green-800 px-2.5 py-0.5 rounded-full">Yes</span>
-                      <span v-else class="text-xs bg-yellow-100 text-yellow-800 px-2.5 py-0.5 rounded-full">No</span>
-                    </div>
-                    
-                    <div class="flex justify-between">
-                      <span class="text-sm text-gray-600">WASM File:</span>
-                      <span class="text-xs">{{ mcpServer.wasmPath ? getWasmFilename(mcpServer.wasmPath) : 'None' }}</span>
-                    </div>
-                    
-                    <div class="flex justify-between">
-                      <span class="text-sm text-gray-600">API Ready:</span>
-                      <span v-if="mcpServer.status === 'active'" class="text-xs bg-green-100 text-green-800 px-2.5 py-0.5 rounded-full">Yes</span>
-                      <span v-else class="text-xs bg-red-100 text-red-800 px-2.5 py-0.5 rounded-full">No</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </AppCard>
         </div>
         
         <!-- Sidebar -->
         <div class="space-y-6">
-          <AppCard title="Versions">
-            <div v-if="versions.length" class="divide-y divide-gray-100">
-              <div v-for="version in versions" :key="version.version" class="py-2 first:pt-0 last:pb-0">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center">
-                    <span class="font-medium" :class="{ 'text-primary-500': version.version === mcpServer.version }">
-                      Version {{ version.version }}
-                    </span>
-                    <span v-if="version.version === mcpServer.version" class="ml-2 text-xs bg-primary-100 text-primary-800 px-2 py-0.5 rounded-full">
-                      Current
-                    </span>
-                  </div>
-                  <button 
-                    v-if="version.version !== mcpServer.version"
-                    @click="loadVersion(version.version)" 
-                    class="text-primary-500 hover:text-primary-600 text-sm"
-                  >
-                    View
-                  </button>
-                </div>
-                <div class="text-xs text-gray-500 mt-1">
-                  {{ formatDate(version.updatedAt) }}
-                </div>
-              </div>
-            </div>
-            <div v-else class="text-center py-3 text-gray-500">
-              No versions available
-            </div>
-          </AppCard>
+         
           
           <AppCard title="HTTP Interfaces">
             <div class="text-sm text-gray-500 mb-3">
@@ -528,42 +372,90 @@
 
 <script setup lang="ts">
 import { useRouter, useRoute } from 'vue-router';
-import FileUpload from '~/components/FileUpload.vue';
-import FileList from '~/components/FileList.vue';
-import { toast } from '~/utils/toast';
+import { ref, onMounted, computed } from 'vue';
+import { useApi } from '~/composables/useApi';
+import { useToast } from '~/composables/useToast';
+import { useRuntimeConfig } from '#app/nuxt';
+
+// Define interfaces for better type checking
+interface MCPServer {
+  id: string;
+  name: string;
+  description?: string;
+  status: string;
+  version: string;
+  createdAt: string;
+  updatedAt: string;
+  tools?: Tool[];
+}
+
+interface Tool {
+  name: string;
+  description?: string;
+  requestTemplate: {
+    method: string;
+    url: string;
+    headers?: Record<string, string>;
+    body?: string;
+  };
+  responseTemplate: {
+    body: string;
+  };
+}
+
+interface HttpInterface {
+  id: string;
+  name: string;
+  path: string;
+  method: string;
+  description?: string;
+}
+
+interface Version {
+  version: number;
+  updatedAt: string;
+}
 
 const router = useRouter();
 const route = useRoute();
-const { $api } = useNuxtApp();
+const $api = useApi();
+const toast = useToast();
+const config = useRuntimeConfig();
 
 const loading = ref(true);
-const compiling = ref(false);
 const activating = ref(false);
-const mcpServer = ref<any>(null);
-const versions = ref<any[]>([]);
-const httpInterfaces = ref<any[]>([]);
-const loadingHttpInterfaces = ref(true);
+const registering = ref(false);
+const mcpServer = ref<MCPServer | null>(null);
+const versions = ref<Version[]>([]);
+const httpInterfaces = ref<HttpInterface[]>([]);
+const loadingHttpInterfaces = ref(false);
+const testingTool = ref(false);
+const testParams = ref<Record<string, any>>({});
+const testResult = ref('');
+const selectedParameterSchema = ref(null);
+const validationErrors = ref<Record<string, string>>({});
+
+// Get the server ID from the route params
+const serverId = computed(() => {
+  const id = route.params.id;
+  return typeof id === 'string' ? id : id[0];
+});
 
 // Test tool modal state
 const showTestModal = ref(false);
-const activeTool = ref<any>(null);
+const activeTool = ref<Tool | null>(null);
 const testInputs = ref<{ name: string; value: string; placeholder: string }[]>([]);
-const testingTool = ref(false);
-const testResult = ref('');
+
+// API base URL for examples
+const apiBaseUrl = computed(() => {
+  return config.public.apiBaseUrl || '';
+});
 
 // WASM File Upload
-const uploadFile = ref<File | null>(null);
+const uploadFile = ref(null);
 const uploading = ref(false);
-const wasmFiles = ref<any[]>([]);
-const loadingFiles = ref(true);
-
-interface WasmFile {
-  id: string;
-  name: string;
-  size: number;
-  uploadedAt: string;
-  path: string;
-}
+const wasmFiles = ref([]);
+const loadingFiles = ref(false);
 
 // Status color mapping
 const statusClass = (status: string) => {
@@ -598,52 +490,60 @@ const formatDate = (date: string) => {
 const loadVersion = async (version: number) => {
   try {
     loading.value = true;
-    const response = await $api.mcpServers.getVersion(route.params.id as string, version);
+    const response = await $api.mcpServers.getVersion(serverId.value, version);
     mcpServer.value = response.data;
+    toast.success(`Loaded version ${version}`);
   } catch (error) {
-    console.error('Failed to load version:', error);
+    console.error('Error loading version:', error);
+    toast.error(`Failed to load version ${version}`);
   } finally {
     loading.value = false;
   }
 };
 
-// Compile server
-async function compileServer() {
+// Register server
+async function registerServer() {
+  if (registering.value) return;
+  
+  registering.value = true;
   try {
-    compiling.value = true;
-    const response = await $api.mcpServers.compile(route.params.id as string);
-    mcpServer.value = { ...mcpServer.value, wasmPath: response.data.wasmPath };
-    toast.success('编译成功', '服务器编译成功');
+    await $api.mcpServers.register(serverId.value);
+    toast.success('MCP Server registered successfully');
+    await fetchMCPServer();
   } catch (error: any) {
-    console.error('Failed to compile server:', error);
-    toast.error('编译失败', '服务器编译失败，请稍后重试');
+    console.error('Error registering MCP server:', error);
+    console.error('Error details:', error.response?.data);
+    toast.error(error.response?.data?.error || 'Failed to register MCP server');
   } finally {
-    compiling.value = false;
+    registering.value = false;
   }
 }
 
 // Activate server
-const activateServer = async () => {
+async function activateServer() {
+  if (activating.value) return;
+  
+  activating.value = true;
   try {
-    activating.value = true;
-    await $api.mcpServers.activate(route.params.id as string);
-    mcpServer.value = { ...mcpServer.value, status: 'active' };
-    toast.success('激活成功', '服务器激活成功');
+    await $api.mcpServers.activate(serverId.value);
+    toast.success('MCP Server activated successfully');
+    await fetchMCPServer();
   } catch (error: any) {
-    console.error('Failed to activate server:', error);
-    toast.error('激活失败', '服务器激活失败，请稍后重试');
+    console.error('Error activating MCP server:', error);
+    console.error('Error details:', error.response?.data);
+    toast.error(error.response?.data?.error || 'Failed to activate MCP server');
   } finally {
     activating.value = false;
   }
-};
+}
 
 // Navigate to edit page
 const editServer = () => {
-  router.push(`/mcp-servers/${route.params.id}-edit`);
+  router.push(`/mcp-servers/${serverId.value}-edit`);
 };
 
 // Test a tool
-const testTool = (tool: any) => {
+const testTool = (tool: Tool) => {
   activeTool.value = tool;
   testResult.value = '';
   
@@ -679,12 +579,18 @@ const runTest = async () => {
       data[input.name] = input.value;
     });
     
+    console.log(`Invoking tool: ${activeTool.value.name} for server ${serverId.value}`);
+    console.log('Request payload:', JSON.stringify(data));
+    
     // Call the tool
     const response = await $api.mcpServers.invokeTool(
-      route.params.id as string, 
+      serverId.value, 
       activeTool.value.name, 
       data
     );
+    
+    console.log(`Tool response status: ${response.status}`);
+    console.log('Tool response data:', response.data);
     
     // Handle different response types
     if (typeof response.data === 'object') {
@@ -695,9 +601,13 @@ const runTest = async () => {
   } catch (error: any) {
     console.error('Failed to test tool:', error);
     
-    // Provide more detailed error information
+    // Log detailed error information
     if (error.response) {
-      // The request was made and the server responded with a status code outside of 2xx
+      console.error(`Error status: ${error.response.status}`);
+      console.error('Error response headers:', error.response.headers);
+      console.error('Error response data:', error.response.data);
+      
+      // Provide more detailed error information
       if (error.response.data && error.response.data.error) {
         testResult.value = `Error: ${error.response.data.error}`;
       } else if (error.response.data) {
@@ -707,9 +617,11 @@ const runTest = async () => {
       }
     } else if (error.request) {
       // The request was made but no response was received
+      console.error('No response received:', error.request);
       testResult.value = 'Error: No response received from server. Check network connection.';
     } else {
       // Something happened in setting up the request
+      console.error('Error message:', error.message);
       testResult.value = `Error: ${error.message || 'Failed to test tool'}`;
     }
   } finally {
@@ -717,94 +629,40 @@ const runTest = async () => {
   }
 };
 
-// WASM File Upload
-function onFileSelected(file: File) {
-  uploadFile.value = file;
-}
-
-async function uploadWasmFile() {
-  if (!uploadFile.value) return;
-  
-  try {
-    uploading.value = true;
-    const { data } = await $api.mcpServers.uploadWasm(mcpServer.value.id, uploadFile.value);
-    await fetchWasmFiles();
-    uploadFile.value = null;
-    
-    // Show success message
-    toast.success('上传成功', '文件已成功上传');
-    
-    // Refresh server details
-    await fetchMCPServer();
-  } catch (error: any) {
-    console.error('Error uploading WASM file:', error);
-    toast.error('上传失败', '文件上传失败: ' + (error.response?.data?.error || error.message));
-  } finally {
-    uploading.value = false;
-  }
-}
-
-async function fetchWasmFiles() {
-  try {
-    loadingFiles.value = true;
-    const { data } = await $api.mcpServers.getWasmFiles(mcpServer.value.id);
-    wasmFiles.value = data;
-  } catch (error) {
-    console.error('Error fetching WASM files:', error);
-  } finally {
-    loadingFiles.value = false;
-  }
-}
-
-function downloadWasmFile(file: WasmFile) {
-  // Create a download link
-  const downloadUrl = $api.wasmFiles.download(file.id);
-  window.open(downloadUrl, '_blank');
-}
-
-async function deleteWasmFile(file: WasmFile) {
-  if (!confirm(`Are you sure you want to delete ${file.name}?`)) return;
-  
-  try {
-    await $api.wasmFiles.delete(file.id);
-    await fetchWasmFiles();
-  } catch (error: any) {
-    console.error('Error deleting WASM file:', error);
-    toast.error('删除失败', '文件删除失败: ' + (error.response?.data?.error || error.message));
-  }
-}
-
 // Fetch MCP server
 async function fetchMCPServer() {
-  loading.value = true;
   try {
-    const response = await $api.mcpServers.getById(route.params.id as string);
+    loading.value = true;
+    console.log(`Fetching MCP server with ID: ${serverId.value}`);
+    const response = await $api.mcpServers.getById(serverId.value);
+    console.log('MCP server response:', response.data);
     mcpServer.value = response.data;
-    
-    // Also fetch WASM files
-    fetchWasmFiles();
     
     // Fetch HTTP interfaces used to create this MCP server
     if (mcpServer.value && mcpServer.value.tools && mcpServer.value.tools.length > 0) {
       await fetchHttpInterfaces();
     }
-  } catch (error) {
-    console.error('Failed to fetch MCP server:', error);
+  } catch (error: any) {
+    console.error('Error fetching MCP server:', error);
+    console.error('Error details:', error.response?.data);
     mcpServer.value = null;
+    toast.error(error.response?.data?.error || 'Failed to fetch MCP Server');
   } finally {
     loading.value = false;
   }
 }
 
-// Fetch HTTP interfaces that were used to create this MCP server
+// Fetch HTTP interfaces
 async function fetchHttpInterfaces() {
-  loadingHttpInterfaces.value = true;
   try {
-    // Use the dedicated endpoint to get HTTP interfaces
-    const response = await $api.mcpServers.getHttpInterfaces(route.params.id as string);
+    loadingHttpInterfaces.value = true;
+    console.log(`Fetching HTTP interfaces for server: ${serverId.value}`);
+    const response = await $api.mcpServers.getHttpInterfaces(serverId.value);
+    console.log('HTTP interfaces response:', response.data);
     httpInterfaces.value = response.data;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to fetch HTTP interfaces:', error);
+    console.error('Error details:', error.response?.data);
     httpInterfaces.value = [];
   } finally {
     loadingHttpInterfaces.value = false;
@@ -812,11 +670,6 @@ async function fetchHttpInterfaces() {
 }
 
 // API usage examples
-const apiBaseUrl = computed(() => {
-  const config = useRuntimeConfig();
-  return config.public.apiBaseUrl as string;
-});
-
 const apiEndpoint = computed(() => {
   if (!mcpServer.value) return '';
   return `${apiBaseUrl.value}/api/mcp-servers/${mcpServer.value.id}/tools/{tool-name}`;
@@ -838,7 +691,7 @@ function getWasmFilename(path: string): string {
   return parts[parts.length - 1];
 }
 
-function generateExampleRequestBody(tool: any): string {
+function generateExampleRequestBody(tool: Tool): string {
   // Extract parameters from the URL template
   const url = tool.requestTemplate.url;
   const regex = /\{([^}]+)\}/g;
@@ -870,7 +723,7 @@ function copyTestResult() {
 // Fetch MCP server versions
 async function fetchVersions() {
   try {
-    const id = route.params.id as string;
+    const id = serverId.value as string;
     const response = await $api.mcpServers.getVersions(id);
     versions.value = response.data;
   } catch (error) {

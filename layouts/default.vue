@@ -18,9 +18,7 @@
               <NuxtLink to="/mcp-servers" class="text-gray-700 hover:text-primary-500 px-3 py-2 text-sm font-medium" :class="{ 'text-primary-500': $route.path.startsWith('/mcp-servers') }">
                 MCP Servers
               </NuxtLink>
-              <NuxtLink to="/router" class="text-gray-700 hover:text-primary-500 px-3 py-2 text-sm font-medium" :class="{ 'text-primary-500': $route.path.startsWith('/router') }">
-                Router
-              </NuxtLink>
+              
             </nav>
           </div>
           <div class="flex items-center">

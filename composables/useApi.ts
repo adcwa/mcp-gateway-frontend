@@ -1,8 +1,9 @@
 import axios from 'axios';
+import { useRuntimeConfig } from '#app/nuxt';
 
-export const useApi = () => {
+export function useApi() {
   const config = useRuntimeConfig();
-  const baseURL = config.public.apiBaseUrl as string;
+  const baseURL = config.public.apiBaseUrl || '';
   
   const api = axios.create({
     baseURL,
@@ -12,6 +13,30 @@ export const useApi = () => {
       'Accept': 'application/json'
     }
   });
+  
+  // Add request interceptor for logging
+  api.interceptors.request.use(
+    (config) => {
+      console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`, config.data);
+      return config;
+    },
+    (error) => {
+      console.error('API Request Error:', error);
+      return Promise.reject(error);
+    }
+  );
+  
+  // Add response interceptor for logging
+  api.interceptors.response.use(
+    (response) => {
+      console.log(`API Response: ${response.status} ${response.config.url}`, response.data);
+      return response;
+    },
+    (error) => {
+      console.error('API Response Error:', error.response || error);
+      return Promise.reject(error);
+    }
+  );
   
   // HTTP Interface API
   const httpInterfaces = {
@@ -46,49 +71,29 @@ export const useApi = () => {
     delete: (id: string) => api.delete(`/api/mcp-servers/${id}`),
     getVersions: (id: string) => api.get(`/api/mcp-servers/${id}/versions`),
     getVersion: (id: string, version: number) => api.get(`/api/mcp-servers/${id}/versions/${version}`),
-    compile: (id: string) => api.post(`/api/mcp-servers/${id}/compile`),
+    register: (id: string) => api.post(`/api/mcp-servers/${id}/register`),
     activate: (id: string) => api.post(`/api/mcp-servers/${id}/activate`),
     getHttpInterfaces: (id: string) => api.get(`/api/mcp-servers/${id}/http-interfaces`),
-    invokeTool: (id: string, tool: string, data: any) => api.post(
-      `/api/mcp-servers/${id}/tools/${tool}`, 
-      data,
-      { 
-        timeout: 30000,  // Longer timeout for tool execution
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      }
-    ),
-    // Add file upload function for WASM
-    uploadWasm: (id: string, file: File) => {
-      const formData = new FormData();
-      formData.append('file', file);
+    invokeTool: (id: string, toolName: string, params: any) => {
+      console.log(`Invoking MCP tool: ${toolName} on server: ${id}`);
+      console.log('Tool parameters:', params);
       
-      return axios.post(`${baseURL}/api/mcp-servers/${id}/upload-wasm`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-    },
-    // Add function to list uploaded WASM files
-    getWasmFiles: (id: string) => api.get(`/api/mcp-servers/${id}/wasm-files`)
-  };
-
-  // WASM File Management API
-  const wasmFiles = {
-    getAll: () => api.get('/api/wasm-files'),
-    getById: (id: string) => api.get(`/api/wasm-files/${id}`),
-    delete: (id: string) => api.delete(`/api/wasm-files/${id}`),
-    download: (id: string) => {
-      // Return URL for direct download
-      return `${baseURL}/api/wasm-files/${id}/download`;
+      return api.post(`/api/mcp-servers/${id}/tools/${toolName}`, params)
+        .then(response => {
+          console.log(`Tool invocation successful: ${toolName}`);
+          console.log('Tool response:', response.data);
+          return response;
+        })
+        .catch(error => {
+          console.error(`Tool invocation failed: ${toolName}`);
+          console.error('Error details:', error.response?.data || error.message);
+          throw error;
+        });
     }
   };
   
   return {
     httpInterfaces,
-    mcpServers,
-    wasmFiles
+    mcpServers
   };
-}; 
+} 
