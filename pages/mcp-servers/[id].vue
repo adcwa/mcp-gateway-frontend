@@ -278,25 +278,25 @@
                 </svg>
                 Edit Server
               </AppButton>
-            </div>
+                    </div>
           </AppCard>
           
           <AppCard title="HTTP Interfaces">
             <div class="space-y-3">
               <div class="text-sm text-gray-500 pb-2 border-b border-gray-100">
                 This MCP server uses the following HTTP interfaces:
-              </div>
-              
+                  </div>
+                  
               <div v-if="loadingHttpInterfaces" class="flex justify-center py-4">
                 <div class="animate-spin h-5 w-5 rounded-full border-t-2 border-b-2 border-primary-500"></div>
-              </div>
-              
+                  </div>
+                  
               <div v-else-if="httpInterfaces?.length === 0" class="text-center py-3 text-gray-500">
                 No HTTP interfaces associated
               </div>
               
               <div v-else>
-                <div class="space-y-2">
+                  <div class="space-y-2">
                   <div 
                     v-for="httpInterface in httpInterfaces" 
                     :key="httpInterface.id" 
@@ -315,17 +315,17 @@
                     >
                       View Details
                     </NuxtLink>
-                  </div>
-                </div>
-              </div>
-              
+                    </div>
+                    </div>
+        </div>
+        
               <div v-if="interfaceDifferences.length > 0" class="mt-3 bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-                <div class="flex items-center">
+                  <div class="flex items-center">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
                   <span class="text-sm font-medium text-yellow-800">HTTP interfaces have changed</span>
-                </div>
+                  </div>
                 <div class="text-xs text-yellow-700 mt-1 ml-7">
                   There are differences between the MCP server tools and the HTTP interfaces.
                   <button 
@@ -336,10 +336,10 @@
                     {{ syncingInterfaces ? 'Syncing...' : 'Sync Interfaces' }}
                   </button>
                 </div>
-              </div>
+                </div>
               
               <div class="pt-2 flex justify-end">
-                <NuxtLink 
+              <NuxtLink 
                   to="/http-interfaces" 
                   class="text-xs text-primary-600 hover:text-primary-800 flex items-center"
                 >
@@ -347,8 +347,8 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                   </svg>
                   Manage HTTP Interfaces
-                </NuxtLink>
-              </div>
+              </NuxtLink>
+            </div>
             </div>
           </AppCard>
           
@@ -376,17 +376,17 @@
                           {{ param.name }}
                           <span v-if="matchedHttpInterface && isParamRequired(param.name, 'path')" class="text-red-500">*</span>
                         </label>
-                        <input 
+                      <input 
                           :id="`param-${param.name}`"
                           v-model="param.value" 
-                          type="text" 
+                        type="text" 
                           class="form-input text-sm py-1.5"
                           :placeholder="param.placeholder" 
-                          :disabled="testingTool"
+                        :disabled="testingTool"
                           :required="matchedHttpInterface ? isParamRequired(param.name, 'path') : false"
-                        />
-                      </div>
+                      />
                     </div>
+                  </div>
                   </div>
                   
                   <!-- Query Parameters Section -->
@@ -1766,41 +1766,71 @@ const loadClientExamples = async () => {
     console.error('Error fetching client examples:', error);
     toast.error('Failed to load client code examples');
     
+    // Try to get tool metadata for more accurate examples
+    let toolMetadata = [];
+    try {
+      const toolsResponse = await fetch(`/api/mcp-server/${mcpServer.value?.name}/tools`);
+      if (toolsResponse.ok) {
+        toolMetadata = await toolsResponse.json();
+      }
+    } catch (toolError) {
+      console.error('Failed to fetch tool metadata:', toolError);
+    }
+    
     // Generate mock data if API endpoint isn't available yet
     const serverId = mcpServer.value?.id || '';
     const serverName = mcpServer.value?.name || 'mcp-server';
     
+    // Extract example parameters from tool metadata if available
+    let exampleParams = {
+      headers: {
+        'authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...(your token)',
+        'content-type': 'application/json;charset=UTF-8',
+        'accept': 'application/json, text/plain, */*',
+        'accept-language': 'zh_CN'
+      },
+      body: {
+        'key1': 'value1',
+        'key2': 42
+      }
+    };
+    
+    // Find example parameters from metadata if available
+    if (toolMetadata.length > 0 && toolMetadata[0].examples && toolMetadata[0].examples.length > 0) {
+      exampleParams = toolMetadata[0].examples[0].parameters || exampleParams;
+    }
+    
+    // Format example parameters as strings
+    const exampleParamsStr = JSON.stringify(exampleParams, null, 2);
+    const exampleHeadersStr = JSON.stringify(exampleParams.headers, null, 2);
+    const exampleBodyStr = JSON.stringify(exampleParams.body, null, 2);
+    const sampleToolName = toolMetadata.length > 0 ? toolMetadata[0].name : 'example_tool';
+    
     clientExamples.value = {
       python: `import requests
 
-def call_mcp_tool(tool_name, params):
-    url = "/api/mcp-servers/${serverId}/tools/" + tool_name
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer YOUR_API_KEY"
-    }
-    payload = {"params": params}
+def call_mcp_tool(tool_name, headers, body):
+    url = "/api/mcp-server/${serverName}/tools/" + tool_name
     
-    response = requests.post(url, json=payload, headers=headers)
+    response = requests.post(url, json=body, headers=headers)
     response.raise_for_status()
     return response.json()
 
-# Example usage
-result = call_mcp_tool("example_tool", {"param1": "value1"})
+# Example usage for '${sampleToolName}'
+headers = ${exampleHeadersStr.replace(/^/gm, '    ')}
+
+body = ${exampleBodyStr.replace(/^/gm, '    ')}
+
+result = call_mcp_tool("${sampleToolName}", headers, body)
 print(result)`,
       javascript: `// Using fetch API
-async function callMcpTool(toolName, params) {
-  const url = \`/api/mcp-servers/${serverId}/tools/\${toolName}\`;
-  const headers = {
-    'Content-Type': 'application/json',
-    'Authorization': 'Bearer YOUR_API_KEY'
-  };
-  const payload = { params };
+async function callMcpTool(toolName, headers, body) {
+  const url = \`/api/mcp-server/${serverName}/tools/\${toolName}\`;
   
   const response = await fetch(url, {
     method: 'POST',
-    headers,
-    body: JSON.stringify(payload)
+    headers: headers,
+    body: JSON.stringify(body)
   });
   
   if (!response.ok) {
@@ -1810,14 +1840,17 @@ async function callMcpTool(toolName, params) {
   return await response.json();
 }
 
-// Example usage
-callMcpTool('example_tool', { param1: 'value1' })
+// Example usage for '${sampleToolName}'
+const headers = ${exampleHeadersStr.replace(/^/gm, '  ')};
+
+const body = ${exampleBodyStr.replace(/^/gm, '  ')};
+
+callMcpTool('${sampleToolName}', headers, body)
   .then(result => console.log(result))
   .catch(error => console.error(error));`,
-      curl: `curl -X POST "/api/mcp-servers/${serverId}/tools/example_tool" \\
-  -H "Content-Type: application/json" \\
-  -H "Authorization: Bearer YOUR_API_KEY" \\
-  -d '{"params": {"param1": "value1"}}'`
+      curl: `curl -X POST "/api/mcp-server/${serverName}/tools/${sampleToolName}" \\
+${Object.entries(exampleParams.headers).map(([key, value]) => `  -H "${key}: ${value}" \\`).join('\n')}
+  -d '${JSON.stringify(exampleParams.body)}'`
     };
     activeLanguage.value = 'python';
   } finally {
@@ -1858,47 +1891,6 @@ onMounted(() => {
   });
 });
 
-// Methods to fetch data for new tabs
-const fetchMetadata = async () => {
-  if (mcpServer.value) {
-    loadingMetadata.value = true
-    try {
-      // Replace with actual API endpoint when available
-      const response = await fetch(`/api/mcp-servers/${mcpServer.value.id}/metadata`)
-      if (!response.ok) throw new Error('Failed to fetch metadata')
-      metadata.value = await response.json()
-    } catch (error) {
-      console.error('Error fetching metadata:', error)
-      // Mock data for development
-      metadata.value = {
-        id: mcpServer.value?.id || '',
-        name: mcpServer.value?.name || '',
-        status: mcpServer.value?.status || '',
-        mcp_compliance: 'v1.0',
-        endpoints: {
-          tools: `/api/mcp-servers/${mcpServer.value?.id || ''}/tools`,
-          resources: `/api/mcp-servers/${mcpServer.value?.id || ''}/resources`,
-          prompts: `/api/mcp-servers/${mcpServer.value?.id || ''}/prompts`
-        },
-        capabilities: {
-          streaming: true,
-          function_calling: true,
-          resource_management: true,
-          prompt_templates: true
-        },
-        tools_summary: mcpServer.value?.tools?.map((tool: any) => ({
-          name: tool.name,
-          description: tool.description,
-          method: 'POST',
-          url: `/api/mcp-servers/${mcpServer.value?.id || ''}/tools/${tool.name}`
-        })) || []
-      }
-    } finally {
-      loadingMetadata.value = false
-    }
-  }
-}
-
 // Fetch usage guide
 const fetchUsageGuide = async () => {
   if (!mcpServer.value) return;
@@ -1911,24 +1903,88 @@ const fetchUsageGuide = async () => {
     console.error('Error fetching usage guide:', error);
     toast.error('Failed to load usage guide');
     
+    // Try to get tool metadata for more accurate documentation
+    let toolMetadata = [];
+    try {
+      const toolsResponse = await fetch(`/api/mcp-server/${mcpServer.value?.name}/tools`);
+      if (toolsResponse.ok) {
+        toolMetadata = await toolsResponse.json();
+      }
+    } catch (toolError) {
+      console.error('Failed to fetch tool metadata:', toolError);
+    }
+    
     // Generate mock data if API endpoint isn't available yet
     const serverId = mcpServer.value?.id || '';
     const serverName = mcpServer.value?.name || '';
     const description = mcpServer.value?.description || 'various MCP functionalities';
     
+    // Generate detailed tool usage from metadata when available
+    const toolsUsage = mcpServer.value?.tools?.map((tool: any) => {
+      // Find matching metadata for this tool
+      const metadata = toolMetadata.find((t: any) => t.name === tool.name);
+      
+      // Extract parameter information from metadata if available
+      let parameterInfo = [];
+      if (metadata && metadata.parameters && metadata.parameters.properties) {
+        const { properties, required = [] } = metadata.parameters;
+        
+        parameterInfo = Object.keys(properties).map(key => {
+          const prop = properties[key];
+          const isRequired = required.includes(key);
+          
+          return {
+            name: key,
+            type: prop.type || 'string',
+            description: prop.description || `Parameter '${key}'`,
+            required: isRequired,
+            default: prop.default || null
+          };
+        });
+      } else {
+        // Default parameter info if metadata not available
+        parameterInfo = [
+          {
+            name: 'data',
+            type: 'object',
+            description: 'Tool-specific parameters',
+            required: true,
+            default: null
+          }
+        ];
+      }
+      
+      return {
+        name: tool.name,
+        description: tool.description,
+        method: 'POST',
+        endpoint: `/api/mcp-server/${serverName}/tools/${tool.name}`,
+        parameters: parameterInfo,
+        example_request: metadata && metadata.examples && metadata.examples.length > 0 
+          ? JSON.stringify(metadata.examples[0].parameters, null, 2)
+          : `{\n  // Tool-specific parameters\n}`,
+        example_response: `{\n  // Tool-specific response\n}`,
+        notes: [
+          'Parameters should be passed directly in the request body',
+          'Use proper content-type headers (application/json)',
+          'Response format may vary based on the specific tool'
+        ]
+      };
+    }) || [];
+    
     usageGuide.value = {
       overview: `This guide explains how to use the ${serverName} MCP server, which provides ${description}.`,
       mcp_protocol_info: {
-        specification_url: 'https://github.com/llm-mcp/specification',
+        specification_url: 'https://modelcontextprotocol.io/specification/',
         server_endpoints: {
-          base: `/api/mcp-servers/${serverId}`,
-          tools: `/api/mcp-servers/${serverId}/tools`,
-          resources: `/api/mcp-servers/${serverId}/resources`,
-          prompts: `/api/mcp-servers/${serverId}/prompts`
+          base: `/api/mcp-server/${serverName}`,
+          tools: `/api/mcp-server/${serverName}/tools`,
+          resources: `/api/mcp-server/${serverName}/resources`,
+          prompts: `/api/mcp-server/${serverName}/prompts`
         },
         request_format: {
           content_type: 'application/json',
-          parameters: 'Varies by tool - see the tools section for details'
+          parameters: 'Parameters vary by tool - see the tools section for details'
         },
         response_format: {
           success: '200 OK with JSON response',
@@ -1942,44 +1998,76 @@ const fetchUsageGuide = async () => {
         'Handle responses according to the documentation',
         'Implement error handling for unsuccessful requests'
       ],
-      tools_usage: mcpServer.value?.tools?.map((tool: any) => ({
-        name: tool.name,
-        description: tool.description,
-        method: 'POST',
-        endpoint: `/api/mcp-servers/${serverId}/tools/${tool.name}`,
-        parameters: tool.parameters || [],
-        example_request: `{\n  "params": {\n    // Tool-specific parameters\n  }\n}`,
-        example_response: `{\n  "result": {\n    // Tool-specific response\n  }\n}`,
-        notes: ['Ensure all required parameters are provided', 'Response format may vary based on the specific tool']
-      })) || []
+      tools_usage: toolsUsage
     };
   } finally {
     loadingUsageGuide.value = false;
   }
 };
 
+// Methods to fetch data for new tabs
+const fetchMetadata = async () => {
+  if (!mcpServer.value) return;
+  
+  loadingMetadata.value = true;
+  try {
+    const response = await $api.mcpServers.getMetadata(mcpServer.value.id);
+    metadata.value = response.data;
+  } catch (error) {
+    console.error('Error fetching metadata:', error);
+    toast.error('Failed to load server metadata');
+    
+    // Mock data for development
+    metadata.value = {
+      id: mcpServer.value?.id || '',
+      name: mcpServer.value?.name || '',
+      status: mcpServer.value?.status || '',
+      mcp_compliance: 'v1.0',
+      endpoints: {
+        tools: `/api/mcp-server/${mcpServer.value?.name}/tools`,
+        resources: `/api/mcp-server/${mcpServer.value?.name}/resources`,
+        prompts: `/api/mcp-server/${mcpServer.value?.name}/prompts`
+      },
+      capabilities: {
+        streaming: true,
+        function_calling: true,
+        resource_management: true,
+        prompt_templates: true
+      },
+      tools_summary: mcpServer.value?.tools?.map((tool: any) => ({
+        name: tool.name,
+        description: tool.description,
+        method: 'POST',
+        url: `/api/mcp-server/${mcpServer.value?.name}/tools/${tool.name}`
+      })) || []
+    };
+  } finally {
+    loadingMetadata.value = false;
+  }
+};
+
 // Watch for tab changes to fetch data
 watch(activeTab, (newTab) => {
   if (newTab === 'metadata' && !metadata.value) {
-    fetchMetadata()
+    fetchMetadata();
   } else if (newTab === 'usage' && !usageGuide.value) {
-    fetchUsageGuide()
+    fetchUsageGuide();
   } else if (newTab === 'examples' && !clientExamples.value) {
-    loadClientExamples()
+    loadClientExamples();
   }
-})
+});
 
 // Watch for server changes to reset data
 watch(mcpServer, () => {
-  metadata.value = null
-  usageGuide.value = null
-  clientExamples.value = null
+  metadata.value = null;
+  usageGuide.value = null;
+  clientExamples.value = null;
   if (activeTab.value === 'metadata') {
-    fetchMetadata()
+    fetchMetadata();
   } else if (activeTab.value === 'usage') {
-    fetchUsageGuide()
+    fetchUsageGuide();
   } else if (activeTab.value === 'examples') {
-    loadClientExamples()
+    loadClientExamples();
   }
-}, { deep: true })
+}, { deep: true });
 </script> 

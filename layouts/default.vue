@@ -42,7 +42,7 @@
     <footer class="bg-white border-t border-gray-200 py-6">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center text-sm text-gray-500">
-          <p>MCP Gateway Management Interface © {{ new Date().getFullYear() }}</p>
+          <p>MCP Router Management Interface © {{ new Date().getFullYear() }}</p>
         </div>
       </div>
     </footer>
