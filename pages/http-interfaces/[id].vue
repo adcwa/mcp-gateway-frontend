@@ -76,7 +76,6 @@
                   <tr>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">In</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Required</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
                   </tr>
@@ -85,7 +84,6 @@
                   <tr v-for="param in httpInterface.parameters" :key="param.name">
                     <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ param.name }}</td>
                     <td class="px-4 py-3 text-sm text-gray-500">{{ param.in }}</td>
-                    <td class="px-4 py-3 text-sm text-gray-500">{{ param.type }}</td>
                     <td class="px-4 py-3 text-sm text-gray-500">
                       <span v-if="param.required" class="text-green-500">Yes</span>
                       <span v-else class="text-gray-500">No</span>
@@ -104,19 +102,19 @@
                 <thead>
                   <tr>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Required</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Default Value</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
                   </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-100">
                   <tr v-for="header in httpInterface.headers" :key="header.name">
                     <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ header.name }}</td>
-                    <td class="px-4 py-3 text-sm text-gray-500">{{ header.type }}</td>
                     <td class="px-4 py-3 text-sm text-gray-500">
                       <span v-if="header.required" class="text-green-500">Yes</span>
                       <span v-else class="text-gray-500">No</span>
                     </td>
+                    <td class="px-4 py-3 text-sm text-gray-500">{{ header.defaultValue || '-' }}</td>
                     <td class="px-4 py-3 text-sm text-gray-500">{{ header.description || '-' }}</td>
                   </tr>
                 </tbody>

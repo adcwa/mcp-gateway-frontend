@@ -104,24 +104,24 @@
                 </svg>
               </button>
               
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label :for="`param-name-${index}`" class="block text-sm font-medium text-gray-700">Name</label>
+              <div class="flex flex-wrap items-center gap-2">
+                <div class="w-48">
+                  <label :for="`param-name-${index}`" class="block text-xs font-medium text-gray-700">Name</label>
                   <input
                     :id="`param-name-${index}`"
                     v-model="param.name"
                     type="text"
-                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                    class="mt-0.5 block w-full text-sm rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
                     placeholder="Parameter name"
                   />
                 </div>
                 
-                <div>
-                  <label :for="`param-in-${index}`" class="block text-sm font-medium text-gray-700">Location</label>
+                <div class="w-40">
+                  <label :for="`param-in-${index}`" class="block text-xs font-medium text-gray-700">Location</label>
                   <select
                     :id="`param-in-${index}`"
                     v-model="param.in"
-                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                    class="mt-0.5 block w-full text-sm rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
                   >
                     <option value="query">Query</option>
                     <option value="path">Path</option>
@@ -129,42 +129,25 @@
                   </select>
                 </div>
                 
-                <div>
-                  <label :for="`param-type-${index}`" class="block text-sm font-medium text-gray-700">Type</label>
-                  <select
-                    :id="`param-type-${index}`"
-                    v-model="param.type"
-                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                  >
-                    <option value="string">String</option>
-                    <option value="number">Number</option>
-                    <option value="boolean">Boolean</option>
-                    <option value="array">Array</option>
-                    <option value="object">Object</option>
-                  </select>
+                <div class="flex items-center mt-4 mr-4">
+                  <input
+                    :id="`param-required-${index}`"
+                    v-model="param.required"
+                    type="checkbox"
+                    class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                  />
+                  <label :for="`param-required-${index}`" class="ml-2 text-sm text-gray-700">
+                    Required
+                  </label>
                 </div>
                 
-                <div>
-                  <div class="flex items-center">
-                    <input
-                      :id="`param-required-${index}`"
-                      v-model="param.required"
-                      type="checkbox"
-                      class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                    />
-                    <label :for="`param-required-${index}`" class="ml-2 block text-sm text-gray-700">
-                      Required
-                    </label>
-                  </div>
-                </div>
-                
-                <div class="sm:col-span-2">
-                  <label :for="`param-description-${index}`" class="block text-sm font-medium text-gray-700">Description</label>
+                <div class="flex-grow min-w-52">
+                  <label :for="`param-description-${index}`" class="block text-xs font-medium text-gray-700">Description</label>
                   <input
                     :id="`param-description-${index}`"
                     v-model="param.description"
                     type="text"
-                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                    class="mt-0.5 block w-full text-sm rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
                     placeholder="Parameter description"
                   />
                 </div>
@@ -202,52 +185,48 @@
                 </svg>
               </button>
               
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label :for="`header-name-${index}`" class="block text-sm font-medium text-gray-700">Name</label>
+              <div class="flex flex-wrap items-center gap-2">
+                <div class="w-48">
+                  <label :for="`header-name-${index}`" class="block text-xs font-medium text-gray-700">Name</label>
                   <input
                     :id="`header-name-${index}`"
                     v-model="header.name"
                     type="text"
-                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                    class="mt-0.5 block w-full text-sm rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
                     placeholder="Header name"
                   />
                 </div>
                 
-                <div>
-                  <label :for="`header-type-${index}`" class="block text-sm font-medium text-gray-700">Type</label>
-                  <select
-                    :id="`header-type-${index}`"
-                    v-model="header.type"
-                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                  >
-                    <option value="string">String</option>
-                    <option value="number">Number</option>
-                    <option value="boolean">Boolean</option>
-                  </select>
+                <div class="w-48">
+                  <label :for="`header-default-value-${index}`" class="block text-xs font-medium text-gray-700">Default Value</label>
+                  <input
+                    :id="`header-default-value-${index}`"
+                    v-model="header.defaultValue"
+                    type="text"
+                    class="mt-0.5 block w-full text-sm rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                    placeholder="Default value"
+                  />
                 </div>
                 
-                <div>
-                  <div class="flex items-center">
-                    <input
-                      :id="`header-required-${index}`"
-                      v-model="header.required"
-                      type="checkbox"
-                      class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                    />
-                    <label :for="`header-required-${index}`" class="ml-2 block text-sm text-gray-700">
-                      Required
-                    </label>
-                  </div>
+                <div class="flex items-center mt-4 mr-4">
+                  <input
+                    :id="`header-required-${index}`"
+                    v-model="header.required"
+                    type="checkbox"
+                    class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                  />
+                  <label :for="`header-required-${index}`" class="ml-2 text-sm text-gray-700">
+                    Required
+                  </label>
                 </div>
                 
-                <div class="sm:col-span-2">
-                  <label :for="`header-description-${index}`" class="block text-sm font-medium text-gray-700">Description</label>
+                <div class="flex-grow min-w-52">
+                  <label :for="`header-description-${index}`" class="block text-xs font-medium text-gray-700">Description</label>
                   <input
                     :id="`header-description-${index}`"
                     v-model="header.description"
                     type="text"
-                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                    class="mt-0.5 block w-full text-sm rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
                     placeholder="Header description"
                   />
                 </div>
@@ -630,7 +609,8 @@ function addHeader() {
     name: '',
     type: 'string',
     required: false,
-    description: ''
+    description: '',
+    defaultValue: ''
   });
 }
 

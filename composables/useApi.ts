@@ -73,6 +73,7 @@ export function useApi() {
     getVersion: (id: string, version: number) => api.get(`/api/mcp-servers/${id}/versions/${version}`),
     register: (id: string) => api.post(`/api/mcp-servers/${id}/register`),
     activate: (id: string) => api.post(`/api/mcp-servers/${id}/activate`),
+    deactivate: (id: string) => api.post(`/api/mcp-servers/${id}/deactivate`),
     getHttpInterfaces: (id: string) => api.get(`/api/mcp-servers/${id}/http-interfaces`),
     invokeTool: (id: string, toolName: string, params: any) => {
       console.log(`Invoking MCP tool: ${toolName} on server: ${id}`);

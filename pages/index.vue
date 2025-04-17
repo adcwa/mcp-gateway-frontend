@@ -8,7 +8,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <AppCard title="HTTP Interfaces" hover>
         <div class="flex items-center justify-between">
-          <div class="text-4xl font-bold text-primary-500">{{ httpInterfaces.length }}</div>
+          <div class="text-4xl font-bold text-primary-500">{{ httpInterfaces?.length }}</div>
           <div class="p-3 bg-primary-100 rounded-full">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />

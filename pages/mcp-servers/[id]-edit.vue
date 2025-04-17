@@ -78,7 +78,7 @@
             <div class="animate-spin h-6 w-6 rounded-full border-t-2 border-b-2 border-primary-500"></div>
           </div>
           
-          <div v-else-if="httpInterfaces.length === 0" class="text-center py-6">
+          <div v-else-if="httpInterfaces?.length === 0" class="text-center py-6">
             <p class="text-sm text-gray-500">没有可用的 HTTP 接口</p>
             <div class="mt-4">
               <NuxtLink to="/http-interfaces/create" class="text-sm text-primary-500 hover:text-primary-600">
@@ -293,13 +293,13 @@ const methodClass = (method: string) => {
 
 // 获取 HTTP 接口方法
 const getHttpInterfaceMethod = (id: string) => {
-  const httpInterface = httpInterfaces.value.find(item => item.id === id);
+  const httpInterface = httpInterfaces?.value?.find(item => item.id === id);
   return httpInterface ? httpInterface.method : '';
 };
 
 // 获取 HTTP 接口名称
 const getHttpInterfaceName = (id: string) => {
-  const httpInterface = httpInterfaces.value.find(item => item.id === id);
+  const httpInterface = httpInterfaces?.value?.find(item => item.id === id);
   return httpInterface ? httpInterface.name : '';
 };
 

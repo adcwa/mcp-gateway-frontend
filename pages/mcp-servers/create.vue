@@ -74,7 +74,7 @@
             <div class="animate-spin h-6 w-6 rounded-full border-t-2 border-b-2 border-primary-500"></div>
           </div>
           
-          <div v-else-if="httpInterfaces.length === 0" class="text-center py-6">
+          <div v-else-if="httpInterfaces?.length === 0" class="text-center py-6">
             <p class="text-sm text-gray-500">No HTTP interfaces available</p>
             <div class="mt-4">
               <NuxtLink to="/http-interfaces/create" class="text-sm text-primary-500 hover:text-primary-600">
@@ -298,7 +298,7 @@ function toggleSelectAll() {
 
 // Get HTTP interface method by ID
 function getHttpInterfaceMethod(id: string): string {
-  const httpInterface = httpInterfaces.value.find(item => item.id === id);
+  const httpInterface = httpInterfaces?.value?.find(item => item.id === id);
   return httpInterface ? httpInterface.method : '';
 }
 
@@ -310,7 +310,7 @@ function getMethodClass(id: string): string {
 
 // Get HTTP interface name by ID
 function getHttpInterfaceName(id: string): string {
-  const httpInterface = httpInterfaces.value.find(item => item.id === id);
+  const httpInterface = httpInterfaces?.value?.find(item => item.id === id);
   return httpInterface ? httpInterface.name : 'Unknown';
 }
 

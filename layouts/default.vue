@@ -6,7 +6,7 @@
         <div class="flex justify-between h-16">
           <div class="flex">
             <div class="flex-shrink-0 flex items-center">
-              <span class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-primary-400">MCP Gateway</span>
+              <span class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-primary-400">MCP Router</span>
             </div>
             <nav class="ml-6 flex space-x-8 items-center">
               <NuxtLink to="/" class="text-gray-700 hover:text-primary-500 px-3 py-2 text-sm font-medium" :class="{ 'text-primary-500': $route.path === '/' }">
@@ -14,6 +14,9 @@
               </NuxtLink>
               <NuxtLink to="/http-interfaces" class="text-gray-700 hover:text-primary-500 px-3 py-2 text-sm font-medium" :class="{ 'text-primary-500': $route.path.startsWith('/http-interfaces') }">
                 HTTP Interfaces
+              </NuxtLink>
+              <NuxtLink to="/db-operations" class="text-gray-700 hover:text-primary-500 px-3 py-2 text-sm font-medium" :class="{ 'text-primary-500': $route.path.startsWith('/db-operations') }">
+                DB Operations
               </NuxtLink>
               <NuxtLink to="/mcp-servers" class="text-gray-700 hover:text-primary-500 px-3 py-2 text-sm font-medium" :class="{ 'text-primary-500': $route.path.startsWith('/mcp-servers') }">
                 MCP Servers
