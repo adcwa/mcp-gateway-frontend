@@ -75,6 +75,10 @@ export function useApi() {
     activate: (id: string) => api.post(`/api/mcp-servers/${id}/activate`),
     deactivate: (id: string) => api.post(`/api/mcp-servers/${id}/deactivate`),
     getHttpInterfaces: (id: string) => api.get(`/api/mcp-servers/${id}/http-interfaces`),
+    validateName: (data: any) => api.post(`/api/mcp-servers/validate-name`, data),
+    getMetadata: (id: string) => api.get(`/api/mcp-servers/${id}/metadata`),
+    getUsageGuide: (id: string) => api.get(`/api/mcp-servers/${id}/usage-guide`),
+    getClientExamples: (id: string) => api.get(`/api/mcp-servers/${id}/client-examples`),
     invokeTool: (id: string, toolName: string, params: any) => {
       console.log(`Invoking MCP tool: ${toolName} on server: ${id}`);
       console.log('Tool parameters:', params);

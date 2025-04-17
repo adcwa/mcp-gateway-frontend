@@ -59,7 +59,27 @@
         </PageHeader>
       </div>
       
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="mb-6">
+        <div class="border-b border-gray-200">
+          <nav class="-mb-px flex space-x-8">
+            <button
+              v-for="tab in tabs"
+              :key="tab.name"
+              @click="activeTab = tab.name"
+              :class="[
+                activeTab === tab.name
+                  ? 'border-primary-500 text-primary-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+                'whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm'
+              ]"
+            >
+              {{ tab.label }}
+            </button>
+          </nav>
+        </div>
+      </div>
+      
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6" v-if="activeTab === 'details'">
         <!-- Main Information -->
         <div class="lg:col-span-2 space-y-6">
           <AppCard title="Server Information">
@@ -258,25 +278,25 @@
                 </svg>
                 Edit Server
               </AppButton>
-                    </div>
+            </div>
           </AppCard>
           
           <AppCard title="HTTP Interfaces">
             <div class="space-y-3">
               <div class="text-sm text-gray-500 pb-2 border-b border-gray-100">
                 This MCP server uses the following HTTP interfaces:
-                  </div>
-                  
+              </div>
+              
               <div v-if="loadingHttpInterfaces" class="flex justify-center py-4">
                 <div class="animate-spin h-5 w-5 rounded-full border-t-2 border-b-2 border-primary-500"></div>
-                  </div>
-                  
+              </div>
+              
               <div v-else-if="httpInterfaces?.length === 0" class="text-center py-3 text-gray-500">
                 No HTTP interfaces associated
               </div>
               
               <div v-else>
-                  <div class="space-y-2">
+                <div class="space-y-2">
                   <div 
                     v-for="httpInterface in httpInterfaces" 
                     :key="httpInterface.id" 
@@ -295,17 +315,17 @@
                     >
                       View Details
                     </NuxtLink>
-                    </div>
-                    </div>
-        </div>
-        
+                  </div>
+                </div>
+              </div>
+              
               <div v-if="interfaceDifferences.length > 0" class="mt-3 bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-                  <div class="flex items-center">
+                <div class="flex items-center">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
                   <span class="text-sm font-medium text-yellow-800">HTTP interfaces have changed</span>
-                  </div>
+                </div>
                 <div class="text-xs text-yellow-700 mt-1 ml-7">
                   There are differences between the MCP server tools and the HTTP interfaces.
                   <button 
@@ -316,10 +336,10 @@
                     {{ syncingInterfaces ? 'Syncing...' : 'Sync Interfaces' }}
                   </button>
                 </div>
-                </div>
+              </div>
               
               <div class="pt-2 flex justify-end">
-              <NuxtLink 
+                <NuxtLink 
                   to="/http-interfaces" 
                   class="text-xs text-primary-600 hover:text-primary-800 flex items-center"
                 >
@@ -327,8 +347,8 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                   </svg>
                   Manage HTTP Interfaces
-              </NuxtLink>
-            </div>
+                </NuxtLink>
+              </div>
             </div>
           </AppCard>
           
@@ -356,17 +376,17 @@
                           {{ param.name }}
                           <span v-if="matchedHttpInterface && isParamRequired(param.name, 'path')" class="text-red-500">*</span>
                         </label>
-                      <input 
+                        <input 
                           :id="`param-${param.name}`"
                           v-model="param.value" 
-                        type="text" 
+                          type="text" 
                           class="form-input text-sm py-1.5"
                           :placeholder="param.placeholder" 
-                        :disabled="testingTool"
+                          :disabled="testingTool"
                           :required="matchedHttpInterface ? isParamRequired(param.name, 'path') : false"
-                      />
+                        />
+                      </div>
                     </div>
-                  </div>
                   </div>
                   
                   <!-- Query Parameters Section -->
@@ -522,13 +542,286 @@
           </div>
         </div>
       </div>
+
+      <!-- Metadata Tab -->
+      <div v-else-if="activeTab === 'metadata'" class="space-y-6">
+        <AppCard title="Server Metadata">
+          <div v-if="loadingMetadata" class="flex justify-center py-4">
+            <div class="animate-spin h-5 w-5 rounded-full border-t-2 border-b-2 border-primary-500"></div>
+          </div>
+          
+          <div v-else-if="!metadata" class="text-center py-4 text-gray-500">
+            Failed to load metadata
+          </div>
+          
+          <div v-else>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div>
+                <div class="text-sm text-gray-500">Server Name</div>
+                <div class="font-medium">{{ metadata.name }}</div>
+              </div>
+              <div>
+                <div class="text-sm text-gray-500">ID</div>
+                <div class="font-medium font-mono text-sm">{{ metadata.id }}</div>
+              </div>
+              <div>
+                <div class="text-sm text-gray-500">Status</div>
+                <div>
+                  <span :class="statusClass(metadata.status)" class="text-xs font-medium px-2.5 py-0.5 rounded-full">
+                    {{ metadata.status }}
+                  </span>
+                </div>
+              </div>
+              <div>
+                <div class="text-sm text-gray-500">MCP Compliance</div>
+                <div class="font-medium">{{ metadata.mcp_compliance }}</div>
+              </div>
+            </div>
+            
+            <div class="mb-6">
+              <div class="text-sm font-medium text-gray-700 mb-2">Endpoints</div>
+              <div class="bg-gray-50 rounded-lg p-3 space-y-2">
+                <div v-for="(url, name) in metadata.endpoints" :key="name" class="flex flex-col sm:flex-row sm:items-center">
+                  <span class="text-xs font-medium text-gray-600 min-w-24">{{ name }}:</span>
+                  <code class="font-mono text-xs text-gray-800 mt-1 sm:mt-0">{{ url }}</code>
+                </div>
+              </div>
+            </div>
+            
+            <div class="mb-6">
+              <div class="text-sm font-medium text-gray-700 mb-2">Capabilities</div>
+              <div class="bg-gray-50 rounded-lg p-3 space-y-2">
+                <div v-for="(enabled, capability) in metadata.capabilities" :key="capability" class="flex items-center">
+                  <span class="text-xs font-medium text-gray-600 min-w-24">{{ capability }}:</span>
+                  <span v-if="enabled" class="text-green-500 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Enabled
+                  </span>
+                  <span v-else class="text-gray-400 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Not Available
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            <div>
+              <div class="text-sm font-medium text-gray-700 mb-2">Tools Summary</div>
+              <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                  <thead>
+                    <tr class="bg-gray-50">
+                      <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                      <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                      <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
+                      <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">URL</th>
+                    </tr>
+                  </thead>
+                  <tbody class="bg-white divide-y divide-gray-100">
+                    <tr v-for="tool in metadata.tools_summary" :key="tool.name">
+                      <td class="px-3 py-2 text-sm font-medium text-gray-900">{{ tool.name }}</td>
+                      <td class="px-3 py-2 text-sm text-gray-500">{{ tool.description || 'No description' }}</td>
+                      <td class="px-3 py-2">
+                        <span :class="methodClass(tool.method)" class="text-xs font-medium px-2 py-0.5 rounded">
+                          {{ tool.method }}
+                        </span>
+                      </td>
+                      <td class="px-3 py-2 font-mono text-xs text-gray-700 truncate max-w-xs">{{ tool.url }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </AppCard>
+      </div>
+
+      <!-- Usage Guide Tab -->
+      <div v-else-if="activeTab === 'usage'" class="space-y-6">
+        <AppCard title="Server Usage Guide">
+          <div v-if="loadingUsageGuide" class="flex justify-center py-4">
+            <div class="animate-spin h-5 w-5 rounded-full border-t-2 border-b-2 border-primary-500"></div>
+          </div>
+          
+          <div v-else-if="!usageGuide" class="text-center py-4 text-gray-500">
+            Failed to load usage guide
+          </div>
+          
+          <div v-else>
+            <div class="mb-6">
+              <h3 class="text-lg font-medium text-gray-900 mb-2">Overview</h3>
+              <p class="text-gray-600">{{ usageGuide.overview }}</p>
+            </div>
+            
+            <div class="mb-6">
+              <h3 class="text-lg font-medium text-gray-900 mb-2">MCP Protocol Information</h3>
+              <div class="bg-gray-50 rounded-lg p-4">
+                <div class="mb-3">
+                  <div class="text-sm font-medium text-gray-700 mb-1">Specification URL</div>
+                  <a :href="usageGuide.mcp_protocol_info.specification_url" target="_blank" class="text-primary-600 hover:text-primary-800 text-sm">
+                    {{ usageGuide.mcp_protocol_info.specification_url }}
+                  </a>
+                </div>
+                
+                <div class="mb-3">
+                  <div class="text-sm font-medium text-gray-700 mb-1">Server Endpoints</div>
+                  <div class="space-y-1">
+                    <div v-for="(url, name) in usageGuide.mcp_protocol_info.server_endpoints" :key="name" class="flex flex-col sm:flex-row">
+                      <span class="text-xs font-medium text-gray-600 min-w-32">{{ name }}:</span>
+                      <code class="font-mono text-xs text-gray-800 mt-1 sm:mt-0">{{ url }}</code>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <div class="text-sm font-medium text-gray-700 mb-1">Request Format</div>
+                    <div class="text-sm text-gray-600">
+                      <div><span class="font-medium">Content-Type:</span> {{ usageGuide.mcp_protocol_info.request_format.content_type }}</div>
+                      <div><span class="font-medium">Parameters:</span> {{ usageGuide.mcp_protocol_info.request_format.parameters }}</div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div class="text-sm font-medium text-gray-700 mb-1">Response Format</div>
+                    <div class="text-sm text-gray-600">
+                      <div><span class="font-medium">Success:</span> {{ usageGuide.mcp_protocol_info.response_format.success }}</div>
+                      <div><span class="font-medium">Error:</span> {{ usageGuide.mcp_protocol_info.response_format.error }}</div>
+                      <div><span class="font-medium">Content-Type:</span> {{ usageGuide.mcp_protocol_info.response_format.content_type }}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="mb-6">
+              <h3 class="text-lg font-medium text-gray-900 mb-2">Integration Steps</h3>
+              <ol class="list-decimal pl-5 space-y-2 text-gray-600">
+                <li v-for="(step, index) in usageGuide.integration_steps" :key="index">{{ step }}</li>
+              </ol>
+            </div>
+            
+            <div>
+              <h3 class="text-lg font-medium text-gray-900 mb-2">Tools Usage</h3>
+              <div v-for="(tool, index) in usageGuide.tools_usage" :key="tool.name" :class="{ 'mt-6 pt-6 border-t border-gray-200': index > 0 }">
+                <div class="flex items-center justify-between">
+                  <h4 class="text-md font-semibold text-gray-800">{{ tool.name }}</h4>
+                  <div class="text-xs px-2 py-1 bg-gray-100 rounded text-gray-600">
+                    {{ tool.method }}
+                  </div>
+                </div>
+                
+                <p class="text-sm text-gray-500 mt-1 mb-3">{{ tool.description || 'No description' }}</p>
+                
+                <div class="mb-4">
+                  <div class="text-sm font-medium text-gray-700 mb-1">Endpoint</div>
+                  <code class="block bg-gray-50 p-2 rounded font-mono text-xs">{{ tool.endpoint }}</code>
+                </div>
+                
+                <div class="mb-4">
+                  <div class="text-sm font-medium text-gray-700 mb-1">Parameters</div>
+                  <div class="bg-gray-50 rounded-lg p-3">
+                    <div v-if="tool.parameters && tool.parameters.length > 0">
+                      <div v-for="param in tool.parameters" :key="param.name" class="mb-2 last:mb-0">
+                        <div class="flex items-center">
+                          <span class="font-mono text-xs text-gray-800">{{ param.name }}</span>
+                          <span v-if="param.required" class="ml-2 text-xs text-red-500">*required</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-0.5">
+                          <span class="text-gray-400">Type:</span> {{ param.type }}
+                        </div>
+                        <div class="text-xs text-gray-500 mt-0.5">{{ param.description }}</div>
+                      </div>
+                    </div>
+                    <div v-else class="text-sm text-gray-500">No parameters required</div>
+                  </div>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div>
+                    <div class="text-sm font-medium text-gray-700 mb-1">Example Request</div>
+                    <pre class="bg-gray-50 p-2 rounded font-mono text-xs overflow-x-auto whitespace-pre-wrap">{{ tool.example_request }}</pre>
+                  </div>
+                  
+                  <div>
+                    <div class="text-sm font-medium text-gray-700 mb-1">Example Response</div>
+                    <pre class="bg-gray-50 p-2 rounded font-mono text-xs overflow-x-auto whitespace-pre-wrap">{{ tool.example_response }}</pre>
+                  </div>
+                </div>
+                
+                <div class="mt-3">
+                  <div class="text-sm font-medium text-gray-700 mb-1">Notes</div>
+                  <ul class="list-disc pl-5 space-y-1">
+                    <li v-for="(note, i) in tool.notes" :key="i" class="text-xs text-gray-600">{{ note }}</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </AppCard>
+      </div>
+
+      <!-- Client Examples Tab -->
+      <div v-else-if="activeTab === 'examples'" class="space-y-6">
+        <AppCard title="Client Code Examples">
+          <div v-if="loadingClientExamples" class="flex justify-center py-4">
+            <div class="animate-spin h-5 w-5 rounded-full border-t-2 border-b-2 border-primary-500"></div>
+          </div>
+          
+          <div v-else-if="!clientExamples" class="text-center py-4 text-gray-500">
+            Failed to load client examples
+          </div>
+          
+          <div v-else>
+            <div class="mb-4">
+              <div class="border-b border-gray-200">
+                <nav class="-mb-px flex space-x-8">
+                  <button
+                    v-for="(_, lang) in clientExamples"
+                    :key="lang"
+                    @click="activeLanguage = lang"
+                    :class="[
+                      activeLanguage === lang
+                        ? 'border-primary-500 text-primary-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+                      'whitespace-nowrap pb-2 px-1 border-b-2 font-medium text-sm'
+                    ]"
+                  >
+                    {{ capitalizeFirstLetter(lang) }}
+                  </button>
+                </nav>
+              </div>
+            </div>
+            
+            <div v-for="(code, lang) in clientExamples" :key="lang" v-show="activeLanguage === lang">
+              <div class="flex items-center justify-between mb-2">
+                <div class="text-sm font-medium text-gray-700">{{ capitalizeFirstLetter(lang) }} Client Implementation</div>
+                <button 
+                  @click="copyCode(code)" 
+                  class="text-primary-500 hover:text-primary-600 text-xs flex items-center"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-8m-10 0h2m2 0h2m-6 5v-3m0 0h2m2 0h2" />
+                  </svg>
+                  Copy
+                </button>
+              </div>
+              <pre class="bg-gray-50 p-3 rounded font-mono text-xs overflow-x-auto text-gray-800 max-h-96 overflow-y-auto whitespace-pre-wrap">{{ code }}</pre>
+            </div>
+          </div>
+        </AppCard>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useRouter, useRoute } from 'vue-router';
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useApi } from '~/composables/useApi';
 import { useToast } from '~/composables/useToast';
 import { useRuntimeConfig } from '#app/nuxt';
@@ -639,6 +932,72 @@ const bodyValidationError = ref<string>('');
 const showTestModal = ref(false);
 const activeTool = ref<Tool | null>(null);
 const testInputs = ref<{ name: string; value: string; placeholder: string }[]>([]);
+
+// New UI tabs functionality
+const tabs = ref([
+  { name: 'details', label: 'Details' },
+  { name: 'metadata', label: 'Metadata' },
+  { name: 'usage', label: 'Usage Guide' },
+  { name: 'examples', label: 'Client Examples' },
+  { name: 'logs', label: 'Logs' }
+]);
+const activeTab = ref('details');
+const activeLanguage = ref('');  // For client examples language tabs
+const metadata = ref<ServerMetadata | null>(null)
+const usageGuide = ref<ServerUsageGuide | null>(null)
+const clientExamples = ref<Record<string, string> | null>(null)
+const loadingMetadata = ref(false)
+const loadingUsageGuide = ref(false)
+const loadingClientExamples = ref(false)
+
+// Define type interfaces for our data
+interface ServerMetadata {
+  id: string
+  name: string
+  status: string
+  mcp_compliance: string
+  endpoints: Record<string, string>
+  capabilities: Record<string, boolean>
+  tools_summary: Array<{
+    name: string
+    description?: string
+    method: string
+    url: string
+  }>
+}
+
+interface ServerUsageGuide {
+  overview: string
+  mcp_protocol_info: {
+    specification_url: string
+    server_endpoints: Record<string, string>
+    request_format: {
+      content_type: string
+      parameters: string
+    }
+    response_format: {
+      success: string
+      error: string
+      content_type: string
+    }
+  }
+  integration_steps: string[]
+  tools_usage: Array<{
+    name: string
+    description?: string
+    method: string
+    endpoint: string
+    parameters?: Array<{
+      name: string
+      type: string
+      description: string
+      required: boolean
+    }>
+    example_request: string
+    example_response: string
+    notes: string[]
+  }>
+}
 
 // API base URL for examples
 const apiBaseUrl = computed(() => {
@@ -871,27 +1230,33 @@ const isFormValid = computed(() => {
 
 // Status color mapping
 const statusClass = (status: string) => {
-  const classes = {
-    draft: 'bg-yellow-100 text-yellow-800',
-    active: 'bg-green-100 text-green-800',
-    inactive: 'bg-gray-100 text-gray-800'
-  };
-  
-  return classes[status as keyof typeof classes] || 'bg-gray-100 text-gray-800';
-};
+  switch (status.toLowerCase()) {
+    case 'active':
+      return 'bg-green-100 text-green-800'
+    case 'inactive':
+      return 'bg-gray-100 text-gray-800'
+    case 'error':
+      return 'bg-red-100 text-red-800'
+    default:
+      return 'bg-blue-100 text-blue-800'
+  }
+}
 
 // Method color mapping
 const methodClass = (method: string) => {
-  const classes = {
-    GET: 'bg-green-100 text-green-800',
-    POST: 'bg-blue-100 text-blue-800',
-    PUT: 'bg-yellow-100 text-yellow-800',
-    DELETE: 'bg-red-100 text-red-800',
-    PATCH: 'bg-purple-100 text-purple-800'
-  };
-  
-  return classes[method as keyof typeof classes] || 'bg-gray-100 text-gray-800';
-};
+  switch (method.toUpperCase()) {
+    case 'GET':
+      return 'bg-blue-100 text-blue-800'
+    case 'POST':
+      return 'bg-green-100 text-green-800'
+    case 'PUT':
+      return 'bg-yellow-100 text-yellow-800'
+    case 'DELETE':
+      return 'bg-red-100 text-red-800'
+    default:
+      return 'bg-gray-100 text-gray-800'
+  }
+}
 
 // Format date
 const formatDate = (date: string) => {
@@ -1325,9 +1690,296 @@ async function fetchVersions() {
   }
 }
 
+// Load MCP server data
+const loadServer = async () => {
+  loading.value = true;
+  try {
+    const response = await $api.mcpServers.getById(serverId.value);
+    mcpServer.value = response.data;
+    // Also load versions
+    await loadVersions();
+  } catch (error) {
+    console.error('Failed to load server:', error);
+    toast.error('Failed to load server');
+    mcpServer.value = null;
+  } finally {
+    loading.value = false;
+  }
+};
+
+// Load versions data
+const loadVersions = async () => {
+  try {
+    const response = await $api.mcpServers.getVersions(serverId.value);
+    versions.value = response.data;
+  } catch (error) {
+    console.error('Failed to load versions:', error);
+    // Not showing an error toast here as it's not critical
+    versions.value = [];
+  }
+};
+
+// Load server metadata
+const loadMetadata = async () => {
+  if (metadata.value) return; // Avoid redundant loading
+  
+  loadingMetadata.value = true;
+  try {
+    const response = await $api.mcpServers.getMetadata(serverId.value);
+    metadata.value = response.data;
+  } catch (error) {
+    console.error('Failed to load metadata:', error);
+    toast.error('Failed to load server metadata');
+  } finally {
+    loadingMetadata.value = false;
+  }
+};
+
+// Load usage guide
+const loadUsageGuide = async () => {
+  if (usageGuide.value) return; // Avoid redundant loading
+  
+  loadingUsageGuide.value = true;
+  try {
+    const response = await $api.mcpServers.getUsageGuide(serverId.value);
+    usageGuide.value = response.data;
+  } catch (error) {
+    console.error('Failed to load usage guide:', error);
+    toast.error('Failed to load usage guide');
+  } finally {
+    loadingUsageGuide.value = false;
+  }
+};
+
+// Load client examples
+const loadClientExamples = async () => {
+  if (!mcpServer.value) {
+    console.log('MCP server not available');
+    return;
+  }
+  
+  loadingClientExamples.value = true;
+  try {
+    const response = await $api.mcpServers.getClientExamples(mcpServer.value.id);
+    clientExamples.value = response.data;
+  } catch (error) {
+    console.error('Error fetching client examples:', error);
+    toast.error('Failed to load client code examples');
+    
+    // Generate mock data if API endpoint isn't available yet
+    const serverId = mcpServer.value?.id || '';
+    const serverName = mcpServer.value?.name || 'mcp-server';
+    
+    clientExamples.value = {
+      python: `import requests
+
+def call_mcp_tool(tool_name, params):
+    url = "/api/mcp-servers/${serverId}/tools/" + tool_name
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer YOUR_API_KEY"
+    }
+    payload = {"params": params}
+    
+    response = requests.post(url, json=payload, headers=headers)
+    response.raise_for_status()
+    return response.json()
+
+# Example usage
+result = call_mcp_tool("example_tool", {"param1": "value1"})
+print(result)`,
+      javascript: `// Using fetch API
+async function callMcpTool(toolName, params) {
+  const url = \`/api/mcp-servers/${serverId}/tools/\${toolName}\`;
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer YOUR_API_KEY'
+  };
+  const payload = { params };
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload)
+  });
+  
+  if (!response.ok) {
+    throw new Error(\`Error: \${response.status}\`);
+  }
+  
+  return await response.json();
+}
+
+// Example usage
+callMcpTool('example_tool', { param1: 'value1' })
+  .then(result => console.log(result))
+  .catch(error => console.error(error));`,
+      curl: `curl -X POST "/api/mcp-servers/${serverId}/tools/example_tool" \\
+  -H "Content-Type: application/json" \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -d '{"params": {"param1": "value1"}}'`
+    };
+    activeLanguage.value = 'python';
+  } finally {
+    loadingClientExamples.value = false;
+  }
+};
+
+// Copy code example to clipboard
+const copyCode = (code: string) => {
+  navigator.clipboard.writeText(code)
+    .then(() => {
+      // Could show a toast notification here
+      console.log('Code copied to clipboard')
+    })
+    .catch(err => {
+      console.error('Failed to copy code: ', err)
+    })
+}
+
+// Helper to capitalize first letter
+const capitalizeFirstLetter = (string: string) => {
+  return string.charAt(0).toUpperCase() + string.slice(1);
+};
+
 // Load on mount
-onMounted(async () => {
-  await fetchMCPServer();
-  await fetchVersions();
+onMounted(() => {
+  loadServer();
+  
+  // Add watches for tab changes to load data as needed
+  watch(activeTab, async (newTab) => {
+    if (newTab === 'metadata') {
+      await loadMetadata();
+    } else if (newTab === 'usage') {
+      await loadUsageGuide();
+    } else if (newTab === 'examples') {
+      await loadClientExamples();
+    }
+  });
 });
+
+// Methods to fetch data for new tabs
+const fetchMetadata = async () => {
+  if (mcpServer.value) {
+    loadingMetadata.value = true
+    try {
+      // Replace with actual API endpoint when available
+      const response = await fetch(`/api/mcp-servers/${mcpServer.value.id}/metadata`)
+      if (!response.ok) throw new Error('Failed to fetch metadata')
+      metadata.value = await response.json()
+    } catch (error) {
+      console.error('Error fetching metadata:', error)
+      // Mock data for development
+      metadata.value = {
+        id: mcpServer.value?.id || '',
+        name: mcpServer.value?.name || '',
+        status: mcpServer.value?.status || '',
+        mcp_compliance: 'v1.0',
+        endpoints: {
+          tools: `/api/mcp-servers/${mcpServer.value?.id || ''}/tools`,
+          resources: `/api/mcp-servers/${mcpServer.value?.id || ''}/resources`,
+          prompts: `/api/mcp-servers/${mcpServer.value?.id || ''}/prompts`
+        },
+        capabilities: {
+          streaming: true,
+          function_calling: true,
+          resource_management: true,
+          prompt_templates: true
+        },
+        tools_summary: mcpServer.value?.tools?.map((tool: any) => ({
+          name: tool.name,
+          description: tool.description,
+          method: 'POST',
+          url: `/api/mcp-servers/${mcpServer.value?.id || ''}/tools/${tool.name}`
+        })) || []
+      }
+    } finally {
+      loadingMetadata.value = false
+    }
+  }
+}
+
+// Fetch usage guide
+const fetchUsageGuide = async () => {
+  if (!mcpServer.value) return;
+  
+  loadingUsageGuide.value = true;
+  try {
+    const response = await $api.mcpServers.getUsageGuide(mcpServer.value.id);
+    usageGuide.value = response.data;
+  } catch (error) {
+    console.error('Error fetching usage guide:', error);
+    toast.error('Failed to load usage guide');
+    
+    // Generate mock data if API endpoint isn't available yet
+    const serverId = mcpServer.value?.id || '';
+    const serverName = mcpServer.value?.name || '';
+    const description = mcpServer.value?.description || 'various MCP functionalities';
+    
+    usageGuide.value = {
+      overview: `This guide explains how to use the ${serverName} MCP server, which provides ${description}.`,
+      mcp_protocol_info: {
+        specification_url: 'https://github.com/llm-mcp/specification',
+        server_endpoints: {
+          base: `/api/mcp-servers/${serverId}`,
+          tools: `/api/mcp-servers/${serverId}/tools`,
+          resources: `/api/mcp-servers/${serverId}/resources`,
+          prompts: `/api/mcp-servers/${serverId}/prompts`
+        },
+        request_format: {
+          content_type: 'application/json',
+          parameters: 'Varies by tool - see the tools section for details'
+        },
+        response_format: {
+          success: '200 OK with JSON response',
+          error: '4xx or 5xx with error details',
+          content_type: 'application/json'
+        }
+      },
+      integration_steps: [
+        'Authenticate with the MCP Gateway',
+        'Make requests to the appropriate tool endpoints',
+        'Handle responses according to the documentation',
+        'Implement error handling for unsuccessful requests'
+      ],
+      tools_usage: mcpServer.value?.tools?.map((tool: any) => ({
+        name: tool.name,
+        description: tool.description,
+        method: 'POST',
+        endpoint: `/api/mcp-servers/${serverId}/tools/${tool.name}`,
+        parameters: tool.parameters || [],
+        example_request: `{\n  "params": {\n    // Tool-specific parameters\n  }\n}`,
+        example_response: `{\n  "result": {\n    // Tool-specific response\n  }\n}`,
+        notes: ['Ensure all required parameters are provided', 'Response format may vary based on the specific tool']
+      })) || []
+    };
+  } finally {
+    loadingUsageGuide.value = false;
+  }
+};
+
+// Watch for tab changes to fetch data
+watch(activeTab, (newTab) => {
+  if (newTab === 'metadata' && !metadata.value) {
+    fetchMetadata()
+  } else if (newTab === 'usage' && !usageGuide.value) {
+    fetchUsageGuide()
+  } else if (newTab === 'examples' && !clientExamples.value) {
+    loadClientExamples()
+  }
+})
+
+// Watch for server changes to reset data
+watch(mcpServer, () => {
+  metadata.value = null
+  usageGuide.value = null
+  clientExamples.value = null
+  if (activeTab.value === 'metadata') {
+    fetchMetadata()
+  } else if (activeTab.value === 'usage') {
+    fetchUsageGuide()
+  } else if (activeTab.value === 'examples') {
+    loadClientExamples()
+  }
+}, { deep: true })
 </script> 
